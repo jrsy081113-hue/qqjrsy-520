@@ -25,6 +25,7 @@
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
+            
             -ms-user-select: none;
     -webkit-tap-highlight-color: transparent;
         }
@@ -17992,20 +17993,33 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     box-shadow: 0 2px 5px rgba(0, 122, 255, 0.3);
 }
 
-/* 名字条 */
+/* 谁是卧底 - 玩家名字样式修正版 */
 .uc-name {
-    font-size: 11px;
+    font-size: 10px;           /* 字体保持小巧 */
     color: #555 !important;
-    margin-top: 8px;
+    margin-top: 4px;
     background: rgba(255, 255, 255, 0.9) !important;
-    padding: 3px 8px;
-    border-radius: 10px;
-    max-width: 90px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 2px 4px;          /* 稍微减小内边距 */
+    border-radius: 6px;
     border: 1px solid #eef2f7 !important;
     font-weight: 500;
+    
+    /* --- 核心修改开始 --- */
+    width: 100%;               /* 宽度占满父容器 */
+    white-space: normal;       /* 【关键】允许换行！不再强制一行 */
+    word-break: break-all;     /* 允许在任意字符间换行 */
+    line-height: 1.2;          /* 行高紧凑一点 */
+    
+    /* 限制最多显示 2 行，超出才省略 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    text-align: center;        /* 文字居中 */
+    min-height: 16px;          /* 保持最小高度，防止名字太短时排版跳动 */
+    /* --- 核心修改结束 --- */
 }
 
 /* 发言中高亮 */
@@ -18072,7 +18086,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 /* --- 8. 中间状态提示 (下移不挡脸) --- */
 .uc-center-status {
     position: absolute;
-    top: 75%; /* 【关键】下移到 60% 的位置 */
+    top: 90%; /* 【关键】下移到 60% 的位置 */
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
@@ -18277,6 +18291,398 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     font-weight: bold;
     animation: popIn 0.3s ease; /* 弹入动画 */
+}
+
+/* 1. 缩小列宽 */
+.uc-column {
+    width: 60px; /* 原来是 80px */
+}
+
+/* 2. 缩小单个玩家卡片容器 */
+.uc-player-card {
+    width: 55px; /* 原来是 70px */
+}
+
+/* 3. 缩小头像尺寸 */
+.uc-avatar {
+    width: 48px;  /* 原来是 64px */
+    height: 48px; /* 原来是 64px */
+    border-radius: 10px; /* 圆角稍微调小一点 */
+    font-size: 16px; /* 文字头像字体调小 */
+}
+
+/* 4. 调整名字条宽度，防止超出 */
+.uc-name {
+    max-width: 55px;
+    font-size: 10px; /* 字体改小 */
+    margin-top: 4px;
+}
+
+/* --- 修复底部日志滑动吃力的问题 --- */
+.uc-log-container {
+    /* 1. 开启 iOS 惯性滚动，让滑动像原生App一样丝滑 */
+    -webkit-overflow-scrolling: touch !important;
+    
+    /* 2. 明确告诉浏览器这个区域只允许垂直滑动，防止手势冲突 */
+    touch-action: pan-y !important;
+    
+    /* 3. 开启硬件加速，防止被其他动画拖慢 */
+    transform: translateZ(0);
+}
+
+/* --- 优化中间状态提示，防止动画卡顿 --- */
+.uc-center-status {
+    /* 确保它绝对不会拦截手指的点击和滑动事件 */
+    pointer-events: none !important;
+}
+
+/* 如果中间有旋转图标，给它加上硬件加速，防止拖慢页面 */
+.uc-center-status i, 
+.ri-loader-4-line {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* 游戏悬浮球样式 */
+#gameFloatBall {
+    position: fixed;
+    top: 120px; /* 默认位置靠上一点 */
+    right: 0;   /* 贴边 */
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.6); /* 半透明黑底 */
+    color: white;
+    border-radius: 20px 0 0 20px; /* 左圆角，半圆效果 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    z-index: 9999; /* 保证在最上层 */
+    cursor: pointer;
+    box-shadow: -2px 2px 10px rgba(0,0,0,0.1);
+    backdrop-filter: blur(5px);
+    transition: opacity 0.3s;
+}
+#gameFloatBall:active {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+/* --- 谁是卧底：沉浸式内心复盘 UI (蓝白风) --- */
+
+/* 1. 复盘大卡片 (每个角色一张) */
+.uc-replay-card {
+    background: #ffffff;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 24px rgba(24, 144, 255, 0.12); /* 蓝色系投影 */
+    overflow: hidden;
+    border: 1px solid #e6f7ff;
+}
+
+/* 2. 角色头部信息 */
+.uc-replay-header {
+    background: linear-gradient(135deg, #e6f7ff 0%, #ffffff 100%);
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #bae7ff;
+}
+
+.uc-replay-avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+    margin-right: 12px;
+    background-size: cover; background-position: center;
+    background-color: #eee;
+}
+
+.uc-replay-role-info { flex: 1; }
+.uc-replay-name { font-size: 17px; font-weight: 800; color: #0050b3; }
+.uc-replay-identity { 
+    font-size: 12px; padding: 2px 8px; border-radius: 10px; margin-left: 5px; font-weight: normal;
+}
+.uc-replay-identity.civilian { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+.uc-replay-identity.spy { background: #fff1f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+
+/* 3. 时间轴容器 */
+.uc-timeline {
+    padding: 20px 15px;
+    position: relative;
+}
+/* 左侧轴线 */
+.uc-timeline::before {
+    content: ''; position: absolute; left: 25px; top: 20px; bottom: 20px;
+    width: 2px; background: #e6f7ff;
+}
+
+/* 4. 单个事件项 */
+.uc-timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+    padding-left: 45px; /* 给轴线留位置 */
+}
+
+/* 轴线上的点 */
+.uc-timeline-dot {
+    position: absolute; left: 19px; top: 0;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #1890ff;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px #1890ff;
+    z-index: 2;
+}
+
+/* 游戏发生的事件 (客观事实) */
+.uc-event-box {
+    font-size: 13px;
+    color: #666;
+    background: #f7f9fa;
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 8px;
+    border: 1px solid #eee;
+}
+.uc-event-tag { font-weight: bold; color: #333; margin-right: 5px; }
+
+/* 内心戏气泡 (主观想法) */
+.uc-thought-bubble {
+    background: #e6f7ff; /* 淡蓝色背景 */
+    color: #003a8c;       /* 深蓝色文字 */
+    padding: 12px 16px;
+    border-radius: 0 16px 16px 16px;
+    font-size: 15px;
+    line-height: 1.6;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.05);
+}
+/* 气泡小三角 */
+.uc-thought-bubble::before {
+    content: ''; position: absolute; top: 0; left: -8px;
+    width: 0; height: 0;
+    border-top: 10px solid #e6f7ff;
+    border-left: 10px solid transparent;
+}
+
+/* 5. 赛后采访区域 */
+.uc-interview-section {
+    background: #fff;
+    border-top: 2px dashed #bae7ff;
+    padding: 20px;
+    position: relative;
+}
+.uc-interview-title {
+    font-size: 14px; font-weight: bold; color: #1890ff;
+    margin-bottom: 10px; text-align: center;
+    letter-spacing: 2px;
+}
+.uc-interview-content {
+    font-size: 15px; color: #333; line-height: 1.8;
+    text-align: justify; font-style: italic;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .uc-replay-card { background: #1c1c1e; border-color: #333; }
+.wechat-dark-mode .uc-replay-header { background: #2c2c2e; border-color: #333; }
+.wechat-dark-mode .uc-replay-name { color: #fff; }
+.wechat-dark-mode .uc-timeline::before { background: #333; }
+.wechat-dark-mode .uc-event-box { background: #2c2c2e; color: #999; border-color: #444; }
+.wechat-dark-mode .uc-event-tag { color: #ccc; }
+.wechat-dark-mode .uc-thought-bubble { background: #1f3d5c; color: #a6c8ff; } /* 深蓝模式 */
+.wechat-dark-mode .uc-thought-bubble::before { border-top-color: #1f3d5c; }
+.wechat-dark-mode .uc-interview-section { background: #1c1c1e; border-color: #333; }
+.wechat-dark-mode .uc-interview-content { color: #ddd; }
+
+/* --- 修复悬浮球层级问题 (终极版) --- */
+
+/* 1. 将悬浮球的层级设为全站最高 (比报错弹窗的 10000 高很多) */
+#gameFloatBall {
+    z-index: 99999 !important; /* 强制置顶 */
+    position: fixed !important; /* 确保是固定定位 */
+}
+
+/* 2. 游戏API设置弹窗必须比悬浮球还高，否则点开会被球挡住 */
+#gameApiSettingsModal {
+    z-index: 100000 !important; 
+}
+
+/* 3. 确保设置弹窗的遮罩层也能盖住报错弹窗 */
+#gameApiSettingsModal.show {
+    background: rgba(0, 0, 0, 0.5) !important; /* 确保有背景遮罩 */
+}
+
+/* --- 修复预设弹窗层级 (确保在游戏设置弹窗之上) --- */
+
+/* 1. 选择预设弹窗 */
+#gameApiPresetSelectModal {
+    z-index: 100001 !important; /* 比游戏设置弹窗(100000)高 */
+}
+
+/* 2. 通用名称输入弹窗 (保存预设时弹出的那个小框) */
+#nameInputModal {
+    z-index: 100002 !important; /* 必须最高，确保保存时能看见输入框 */
+}
+
+/* 拉黑状态下的感叹号图标 */
+.blocked-error-icon {
+    width: 20px;
+    height: 20px;
+    background-color: #ff3b30;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    margin-left: 8px; /* 紧跟在气泡右侧 */
+    align-self: center;
+    flex-shrink: 0;
+}
+
+/* --- 修复版：拉黑状态下的布局 --- */
+
+/* 1. 让容器允许换行 */
+.message.received.is-blocked .message-body {
+    display: flex !important;
+    flex-direction: row !important; /* 横向排列气泡和感叹号 */
+    flex-wrap: wrap !important;     /* 【关键】允许内部元素换行 */
+    align-items: center;
+}
+
+/* 2. 气泡和感叹号的顺序 */
+.message.received.is-blocked .message-content {
+    order: 1; /* 气泡排在第一位 */
+}
+
+.message.received.is-blocked .blocked-error-icon {
+    order: 2; /* 感叹号排在第二位（气泡右侧） */
+    margin-left: 8px; /* 与气泡保持间距 */
+}
+
+/* 3. 强制时间戳换行到下方 */
+.message.received.is-blocked .message-footer-container {
+    order: 3;        /* 排序最后 */
+    width: 100%;     /* 【关键】强制占满整行，从而被挤到下一行显示 */
+    display: flex;
+    justify-content: flex-start; /* 靠左对齐（跟随接收消息方向） */
+    margin-top: 5px;
+}
+
+/* 禁用按钮的样式：变淡且不可点击 */
+.chat-btn.btn-disabled {
+    opacity: 0.3 !important;
+    pointer-events: none !important;
+    filter: grayscale(100%);
+}
+
+/* --- 公告弹窗专属美化与加宽 --- */
+
+/* 1. 强制加宽公告弹窗 */
+#announcementModal .modal-content {
+    max-width: 480px !important; /* 宽度从 320px 增加到 480px */
+    width: 92% !important;
+    padding: 35px 25px !important;
+    border-radius: 28px !important;
+}
+
+/* 2. 标题美化 */
+#announcementModal .modal-title {
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    letter-spacing: 2px;
+    margin-bottom: 30px !important;
+    text-transform: uppercase;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+}
+
+/* 3. 栏目区块样式 */
+.update-section {
+    margin-bottom: 25px;
+    text-align: left; /* 强制左对齐 */
+}
+
+.update-subtitle {
+    font-size: 16px;
+    font-weight: 800;
+    color: #000;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 4. 列表样式优化 */
+.update-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.update-list li {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #444;
+    margin-bottom: 10px;
+    padding-left: 5px;
+    text-align: justify; /* 两端对齐 */
+    border-bottom: 1px solid #f9f9f9;
+    padding-bottom: 8px;
+}
+
+.update-list li:last-child {
+    border-bottom: none;
+}
+
+/* 5. 确认按钮微调 */
+#announcementModal .modal-btn-confirm {
+    margin-top: 10px !important;
+    background-color: #000 !important;
+    height: 48px !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+}
+
+/* 适配暗色模式 */
+.wechat-dark-mode #announcementModal .update-subtitle {
+    color: #fff;
+}
+.wechat-dark-mode #announcementModal .update-list li {
+    color: #bbb;
+    border-bottom-color: #2c2c2e;
+}
+
+/* 声明框容器样式 */
+.announcement-notice {
+    background-color: #fcfcfc !important; /* 极淡的背景 */
+    border: 1.5px dashed #000 !important; /* 黑色虚线边框，像一张剪纸票据 */
+    padding: 12px 15px !important;
+    margin-bottom: 18px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    color: #444 !important;
+    text-align: justify;
+    position: relative;
+}
+
+/* 声明框内的加粗重点文字 */
+.announcement-notice b {
+    color: #000 !important;
+    font-weight: 800 !important;
+    text-decoration: underline; /* 增加下划线，强调重点 */
+    padding: 0 2px;
+}
+
+/* 暗色模式下的声明框适配 */
+.wechat-dark-mode .announcement-notice {
+    background-color: #2c2c2e !important;
+    border-color: #555 !important;
+    color: #bbb !important;
+}
+.wechat-dark-mode .announcement-notice b {
+    color: #fff !important;
 }
 
     </style>
@@ -18817,6 +19223,9 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     </div>
                 </div>
                 <div class="chat-input-area" id="chatInputArea">
+                <div id="blockedBar" style="display:none; text-align:center; background: var(--nav-bg, #f7f7f7); color:#999; padding:10px; font-size:13px; border-top:1px solid var(--border-color, #e0e0e0); border-bottom:1px solid var(--border-color, #e0e0e0);">
+        你已将对方加入黑名单，无法发送消息
+    </div>
                    <!-- ↓↓↓ 这是新的代码，请用它来替换上面的旧代码 ↓↓↓ -->
 <div class="chat-input">
     <!-- 我们用这个新的div把四个默认按钮包了起来，并给了它一个ID -->
@@ -19074,6 +19483,13 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">清空聊天记录</label>
                 <div class="form-value-display" style="font-size: 12px;">清空</div>
             </div>
+            <div class="form-group-row">
+    <label class="form-label" style="color: #ff3b30;">加入黑名单</label>
+    <label class="toggle-switch bw-switch">
+        <input type="checkbox" id="blockUserToggle" onchange="toggleBlockFriend()">
+        <span class="toggle-slider"></span>
+    </label>
+</div>
         </div>
 
         <!-- 底部按钮：删除 -->
@@ -22855,7 +23271,10 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     <div class="nav-bar">
         <button class="nav-btn" onclick="goHome()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">游戏中心</div>
-        <div></div>
+<button class="nav-btn nav-right-action-btn" onclick="openGameApiSettings()">
+    <i class="ri-settings-4-line"></i>
+</button>
+
     </div>
     
     <!-- 使用 bw-style 继承统一的黑白风格 -->
@@ -24612,6 +25031,148 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
+<!-- 游戏内通用悬浮球 -->
+<div id="gameFloatBall" style="display: none;" onclick="openGameApiSettings()">
+    <i class="ri-settings-4-fill"></i>
+</div>
+
+<!-- 游戏专用 API 设置弹窗 (重构版) -->
+<div id="gameApiSettingsModal" class="modal">
+    <!-- 增加宽度的 modal-content -->
+    <div class="modal-content" style="background-color: #fff; border-radius: 24px; padding: 30px 20px; width: 90%; max-width: 400px;">
+        <div class="modal-title" style="color:#000; font-weight:700; margin-bottom: 15px;">游戏配置</div>
+        
+        <!-- 使用 bw-style 容器来复用设置页面的漂亮样式 -->
+        <div class="bw-style" style="padding: 0; background: transparent; overflow-y: auto; max-height: 70vh;">
+            
+            <!-- 1. 悬浮球开关卡片 -->
+            <div class="form-card" style="margin-bottom: 15px; padding: 0 15px;">
+                <div class="form-group-row switch-row" style="border-bottom: none; padding: 15px 0;">
+                    <label class="form-label" style="font-weight:600; font-size: 15px;">游戏悬浮球</label>
+                    <label class="toggle-switch bw-switch">
+                        <input type="checkbox" id="gameFloatBallToggle" onchange="toggleGameFloatBall()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <!-- 小字解释 -->
+                <div class="form-hint" style="margin-top: -10px; margin-bottom: 15px; padding-bottom: 5px;">
+                    开启后，进入具体游戏界面时会显示悬浮球，点击可随时切换模型或API，无需退出游戏。
+                </div>
+            </div>
+
+            <!-- 2. 预设按钮卡片 -->
+            <div class="form-card" style="margin-bottom: 15px; padding: 0 15px;">
+                <div class="form-group-row" style="border-bottom: none; padding: 15px 0; justify-content: flex-start; gap: 10px;">
+                    <button class="bw-chip-btn" onclick="openGameApiPresetSelector()">选择预设</button>
+                    <button class="bw-chip-btn" onclick="saveGameApiPreset()">保存当前配置</button>
+                </div>
+            </div>
+
+            <!-- 3. API 配置卡片 (核心修改部分) -->
+            <div class="form-card" style="padding: 0 15px;">
+                <div class="form-group-row">
+                    <label class="form-label" style="font-size: 14px;">API 地址</label>
+                    <input type="text" class="form-input" id="gameApiUrl" placeholder="为空则使用全局默认">
+                </div>
+                <div class="form-group-row">
+                    <label class="form-label" style="font-size: 14px;">API Key</label>
+                     <div style="flex: 1; display: flex; align-items: center;">
+                        <input type="password" class="form-input" id="gameApiKey" placeholder="为空则使用全局默认">
+                        <!-- 清空按钮 -->
+                        <i class="ri-close-circle-fill" style="color: #ccc; margin-left: 8px; cursor: pointer; font-size: 16px;" onclick="document.getElementById('gameApiKey').value = ''"></i>
+                    </div>
+                </div>
+
+                <!-- 模型选择区域 (参考主设置样式) -->
+                <div class="form-group-row column-layout" style="border-bottom: none; align-items: stretch;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <label class="form-label" style="font-size: 14px;">API 模型</label>
+                        <!-- 拉取按钮 -->
+                        <button class="bw-chip-btn" onclick="fetchGameModels()">
+                            <i class="ri-download-cloud-2-line"></i> 拉取列表
+                        </button>
+                    </div>
+                    
+                    <!-- 下拉选择框容器 -->
+                    <div class="model-select-container" style="width: 100%; margin-top: 10px; position: relative;">
+                        <!-- 输入框变身为显示框，点击触发下拉 -->
+                        <input type="text" class="form-input" id="gameModelName" placeholder="选择或输入模型名称" readonly onclick="toggleGameModelDropdown()" style="background: #f9f9f9; padding: 10px; border-radius: 8px; width: 100%; text-align: left; box-sizing: border-box;">
+                        
+                        <!-- 下拉箭头 -->
+                        <span class="select-arrow" onclick="toggleGameModelDropdown()" style="right: 10px;">
+                            <i class="ri-arrow-down-s-line"></i>
+                        </span>
+
+                        <!-- 隐藏的下拉菜单 -->
+                        <div class="model-dropdown bw-dropdown" id="gameModelDropdown"></div>
+                    </div>
+                    
+                    <!-- 底部小字解释 -->
+                    <div class="form-hint" style="margin-top: 10px; line-height: 1.5; color: #999;">
+                        如果不填写，将自动使用主设置中的API配置。单独填写可实现玩游戏用便宜模型，聊天用聪明模型。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="modal-buttons" style="margin-top: 20px;">
+                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('gameApiSettingsModal').classList.remove('show')">取消</button>
+                <button class="modal-btn modal-btn-confirm" onclick="saveGameApiSettings()" style="background-color: #000; color: #fff;">保存并生效</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ▼▼▼ 这是你缺少的弹窗结构，请粘贴到 body 末尾 ▼▼▼ -->
+<div id="gameApiPresetSelectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">选择预设</div>
+        
+        <!-- 这里的 ID 必须和 JS 里的对应 -->
+        <div id="gameApiPresetListContainer" class="friend-list" style="max-height: 50vh; overflow-y: auto;">
+            <!-- JS 会把列表生成在这里 -->
+        </div>
+
+        <div class="modal-buttons" style="margin-top: 15px;">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('gameApiPresetSelectModal').classList.remove('show')">关闭</button>
+        </div>
+    </div>
+</div>
+<!-- ▲▲▲ 补全结束 ▲▲▲ -->
+
+<!-- [修正版] 谁是卧底-内心独白复盘页 -->
+<div id="ucInnerThoughtsScreen" class="page">
+    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #e6eff5; z-index: 100;">
+        <!-- 返回按钮：直接绑定退出函数，确保有效 -->
+        <button class="nav-btn" onclick="quitUndercoverGame()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="nav-title" style="color: #333; font-weight: bold;">本局内心独白</div>
+        <div style="width: 40px;"></div>
+    </div>
+    
+    <!-- 核心修复：padding-top: 84px 避开导航栏 -->
+    <div class="wechat-content" id="ucThoughtsContainer" style="padding: 20px; padding-top: 84px; overflow-y: auto; background-color: #f0f7ff; box-sizing: border-box; height: 100%;">
+        <!-- 动态生成的内容将放在这里 -->
+    </div>
+</div>
+
+<div id="unblockRequestModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">解除拉黑申请</div>
+        <div id="unblockRequesterInfo" style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 8px;">
+            <div id="unblockAvatar" class="friend-avatar" style="width: 40px; height: 40px; margin-right: 10px;"></div>
+            <div id="unblockName" style="font-weight: bold;"></div>
+        </div>
+        <div style="font-size: 14px; color: #666; margin-bottom: 10px;">对方留言：</div>
+        <div id="unblockReasonText" style="background: #f0f0f0; padding: 15px; border-radius: 8px; line-height: 1.6; margin-bottom: 20px; font-style: italic;"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="handleUnblockDecision(false)">拒绝</button>
+            <button class="modal-btn modal-btn-confirm" onclick="handleUnblockDecision(true)">同意</button>
+        </div>
+    </div>
+</div>
+
     <script>
     
     // 打字机效果
@@ -24659,12 +25220,12 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         const dbManager = {
             db: null,
             dbName: 'JRSY_DB_V2',
-            dbVersion: 17,
+            dbVersion: 19,
             stores: [
                 'friends', 'chatHistories', 'diaries', 'worldBooks', 'worldBookFolders', 
                 'favorites', 'moments', 'playlist', 'appSettings', 'apiSettings', 'customEmojis',
                 'memories', 'openingStatements' , 'writingStyles', 'skits', 'forumPosts' , 'forumRules', 'forumLikes' , 'bubbleCssPresets', 'interfaceCssPresets', 'apiPresets', 'cloneApiSettings',
-        'voiceAudioCache' , 'fontPresets', 'offlineCssPresets' 
+        'voiceAudioCache' , 'fontPresets', 'offlineCssPresets' , 'gameApiSettings' 
             ],
 
             // 核心修改：初始化函数现在负责检查和重新连接
@@ -24785,35 +25346,12 @@ async function requestPersistentStorage() {
 // 在你的应用启动时调用
 requestPersistentStorage();
 
-// --- ▼▼▼ 在这里更新你的每日公告 ▼▼▼ ---
-
-// --- ▼▼▼ 在这里更新你的每日公告 ▼▼▼ ---
+// --- ▼▼▼ 在这里更新你的每日公告 (含版权声明版) ▼▼▼ ---
 const CURRENT_ANNOUNCEMENT = {
-    version: 5, // 这里的数字比上一次大，用户才会看到弹窗
-    title: "更新公告",
-    content: "1.修复主动发消息间隔设置不显示的bug<br>" +
-             "2.加入亲属卡功能，可以让角色给你开亲属卡，支付的时候可以选择亲属卡支付。<br>" +
-             "3.重构钱包界面，现在的账单可以点进去查看你在小手机里的账单。<br>" +
-             "4.亲属卡留言可选择打开，打开后你通过亲属卡消费的每一笔钱都会被角色看到并做出留言，留言会自动弹出弹窗显示，也可以在亲属卡留言里查看过往留言和消费记录<br>" +
-             "5.给同人文底部加入打赏和砸场子给你，可以选择支付打赏，交易记录也会显示在账单，使用亲属卡支付也会被角色看到。<br>" +
-             "6.催更加入提示词输入和章节催更支付<br>" +
-             "7.同人文可点击分享给角色，角色会知道整篇文的内容。<br>" +
-             "8.可以发布作品了，并且评论还会显示作者标。<br>" +
-             "9.优化总结功能，现在可以总结线下了，还会显示有多少轮未总结，从最早开始总结<br>" +
-             "10.去掉了头像外面的一圈灰色边框<br>" +
-             "11.把拍一拍触发方式改为点击菜单栏里的拍一拍按键即可触发<br>" +
-             "12.更改了发送位置卡片的样式，取消了随机生成地点的逻辑<br>" +
-             "13.加入角色自动发帖开关，打开后角色会在后台根据聊天记录自动发帖子<br>" +
-             "14.磕cp板块做好了，可以在磕cp管理里填写你磕的cp，并刷新磕cp板块<br>" +
-             "15.r18板块已好<br>" +
-             "16.手机app加入角色头像悬浮窗，点击后可以查看角色的想法，角色会知道你在查手机并知道你在看哪个界面，在对应的界面点击头像就可以生成他对于你看这个界面的想法。<br>" +
-             "17.手机app加入新的音乐，设置，录音，视频。<br>" +
-             "18.加入了商店app，可以浏览商品，加入购物车进行支付，并且使用亲属卡角色会知道你买的什么并留言。购买后的商品会进入待发货界面。<br>" +
-             "19.加入代付分享，可以分享给角色让他帮你付，他也会主动帮你买东西"
+    version: 8, // 增加版本号
+    title: "jrsy 系统更新公告",
+    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>6.6元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能</h3><ul class="update-list"><li>1.增加拉黑功能，但只有你可以拉黑角色，角色无法拉黑你。</li><li>2.增加主动换头像功能，角色会根据你发的图片主动更换头像，不需要你额外去好友设置里换。</li><li>3.增加线下模式的单独界面和悬浮球界面切换（注意线下模式的消息在退出线下模式后全部隐藏，再次进入线下模式又会显示）</li><li>4.增加单独设置头像，可以在好友设置里单独设置在该好友聊天界面里的头像，适用于和多个角色用情头的情况。</li><li>5.增加谁是卧底游戏，并且可以在游戏中心单独设置游戏api，游戏期间会有悬浮球可以自由切换api。游戏结束可以选择查看角色本局的内心独白和局后想法。（注意游戏十分消耗额度，可以使用便宜的模型，或者使用按量模型看看是否比按次便宜）</li><li>6.增加群聊邀请功能</li><li>7. 增加列表重回功能，适用于html渲染导致无法</li><li>8.增加更改情侣空间在一起天数功能，记账本的账单可以长按删除。</li><li>9.查手机加入生成角色对你的聊天备注</li><li>10. 增加了情侣空间记忆互通以及用户活动检测，例如你发帖子发朋友圈查手机写情书等活动，角色都会知道，除了查手机其他活动都知道具体的内容，包括使用亲属卡角色也会知道。还有角色发帖子写情书悄悄话发朋友圈等也知道自己发的具体内容。</li></ul></div><div class="update-section"><h3 class="update-subtitle">Bug修复</h3><ul class="update-list"><li>1. 情侣空间退出状态栏显示的bug已修复</li><li>2. 情侣空间评论头像压缩bug已修复</li><li>3. 朋友圈减少角色发图片的概率，增强时间感知，修复点击图片后无法退出的bug</li></ul></div>`
 };
-// --- ▲▲▲ 公告更新区结束 ▲▲▲ ---
-
-// --- ▲▲▲ 公告更新区结束 ▲▲▲ ---
 
 
 
@@ -25198,6 +25736,9 @@ let readerSettings = {
     customBgImage: ''
 };
 
+let gameApiSettings = { apiUrl: '', apiKey: '', modelName: '' };
+let isGameFloatBallEnabled = true; // 默认开启
+
         // 【【【第三步 A：添加这个新的全局变量】】】
 let beautificationSettings = {}; // 用来存放所有自定义图片
         let currentlyDisplayedMessageCount = 0; // 新增：记录当前显示了多少条消息
@@ -25437,18 +25978,130 @@ let charadesWordsList = [
     "电子木鱼", "赛博朋克", "哈基米", "多喝热水"
 ];
 
-// 1. 词库 (平民词 / 卧底词)
+// 谁是卧底词库 (包含基础、进阶、搞怪及新增词汇)
 const UC_WORDS = [
-    ["吃饭", "吃药"], ["果汁", "饮料"], ["王菲", "那英"], ["若曦", "晴川"], 
-    ["保安", "保镖"], ["摩托车", "电动车"], ["眉毛", "胡须"], ["蜘蛛侠", "蝙蝠侠"],
-    ["牛奶", "豆浆"], ["唇膏", "口红"], ["森女", "宅女"], ["富二代", "高富帅"],
-    ["裸婚", "闪婚"], ["作文", "论文"], ["油条", "麻花"], ["壁纸", "贴膜"],
-    ["枕头", "抱枕"], ["公交", "地铁"], ["同学", "同桌"], ["结婚", "订婚"],
-    ["奖牌", "金牌"], ["大米", "小米"], ["气泡", "水泡"], ["老佛爷", "老天爷"]
+    // --- 基础常规类 ---
+    ["苹果", "香蕉"], ["咖啡", "茶"], ["火车", "飞机"], ["冰箱", "微波炉"], 
+    ["篮球", "足球"], ["猫", "狗"], ["夏天", "冬天"], ["钢琴", "吉他"], 
+    ["电影", "电视剧"], ["西瓜", "哈密瓜"], ["自行车", "摩托车"], ["玫瑰", "百合"], 
+    ["汉堡", "披萨"], ["沙滩", "雪山"], ["老虎", "狮子"], ["草莓", "樱桃"], 
+    ["雨伞", "遮阳伞"], ["火锅", "烧烤"], ["大象", "长颈鹿"], ["橙子", "柚子"], 
+    ["手表", "闹钟"], ["冰淇淋", "雪糕"], ["熊猫", "考拉"], ["葡萄", "提子"], 
+    ["电视", "电脑"], ["沙发", "椅子"], ["柠檬", "青柠"], ["海豚", "鲸鱼"], 
+    ["米饭", "面条"], ["篮球场", "足球场"], ["火车票", "飞机票"], ["西瓜汁", "橙汁"], 
+    ["滑板", "轮滑鞋"], ["玫瑰花", "康乃馨"], ["汉堡包", "三明治"], ["电影院", "剧院"], 
+    ["自行车", "电动车"], ["冰淇淋店", "甜品店"], ["图书馆", "书店"], ["火锅店", "烤肉店"], 
+    ["咖啡厅", "茶馆"], ["游泳池", "温泉"], ["篮球鞋", "跑鞋"], ["苹果手机", "安卓手机"],
+
+    // --- 动物植物类 ---
+    ["兔子", "仓鼠"], ["大象", "犀牛"], ["鸽子", "麻雀"], ["玫瑰", "月季"], 
+    ["松树", "柏树"], ["荷花", "莲花"], ["草莓", "蓝莓"], ["竹子", "芦苇"], 
+
+    // --- 食品饮料类 ---
+    ["粽子", "青团"], ["咖啡", "拿铁"], ["寿司", "饭团"], ["辣条", "辣片"], 
+    ["饼干", "曲奇"], ["果汁", "果粒橙"], ["包子", "馒头"], ["巧克力", "可可豆"], 
+    ["泡面", "挂面"], ["牛奶", "酸奶"], ["炒饭", "炒面"], ["火腿", "香肠"], 
+    ["苹果", "梨子"], ["陈醋", "米醋"], ["红茶", "黄茶"], ["红茶", "黑茶"], 
+    ["美式咖啡", "生椰拿铁"], ["辣椒", "芥末"], ["可口可乐", "百事可乐"], 
+    ["小笼包", "灌汤包"], ["麻辣火锅", "菌菇火锅"], ["橘子", "橙子"],
+
+    // --- 生活场景类 ---
+    ["学校", "培训机构"], ["医院", "诊所"], ["超市", "便利店"], ["公园", "广场"], 
+    ["酒店", "民宿"], ["健身房", "瑜伽馆"], ["餐厅", "大排档"], ["车站", "机场"], 
+
+    // --- 物品用具类 ---
+    ["手机", "平板"], ["风扇", "空调"], ["筷子", "勺子"], ["枕头", "抱枕"], 
+    ["手表", "手环"], ["皮鞋", "布鞋"], ["雨衣", "雨伞"], ["台灯", "吊灯"], 
+    ["菠萝", "凤梨"], ["面包", "蛋糕"], ["围巾", "披肩"], ["春联", "福字"], 
+    ["象棋", "围棋"], ["背心", "短袖"], ["拖把", "扫帚"], ["凉鞋", "拖鞋"], 
+    ["哑铃", "杠铃"], ["汤圆", "元宵"], ["积木", "积塑"], ["积木", "乐高"], 
+    ["香瓜", "甜瓜"], ["布鞋", "板鞋"], ["银耳", "木耳"], ["花椒", "胡椒"], 
+    ["古筝", "扬琴"], ["领带", "领结"], ["球鞋", "跑鞋"], ["毛巾", "面巾"], 
+    ["电扇", "电暖"], ["橱柜", "碗柜"], ["饼干", "酥饼"], ["背心", "肚兜"], 
+    ["轿车", "客车"], ["手表", "怀表"], ["红枣", "黑枣"], ["蜡烛", "蜡笔"], 
+    ["蜂蜜", "蜂胶"], ["眉笔", "眉粉"], 
+
+    // --- 趣味脑洞与进阶搞怪类 ---
+    ["棺材", "床"], ["葬礼", "婚礼"], ["骨灰", "奶粉"], ["白酒", "红酒"], 
+    ["上学", "坐牢"], ["太监", "人妖"], ["黄片", "动作片"], ["剩女", "御姐"], 
+    ["柯南", "怪盗基德"], ["沸羊羊", "美羊羊"], ["导员", "班主任"], ["数学", "微积分"], 
+    ["红中", "发财"], ["唇膏", "口红"], ["火鸡面", "鸡屎"], ["高启强", "徐江"], 
+    ["甄嬛", "林黛玉"], ["毒气", "屁"], ["热水", "开水"], ["红楼梦", "甄嬛传"], 
+    ["大学生美育", "高中美术"], ["恋综", "非诚勿扰"], ["跑男", "极限挑战"], 
+    ["富二代", "高富帅"], ["魔术师", "魔法师"], ["生活费", "零花钱"], ["奖牌", "金牌"], 
+    ["综测", "绩点"], ["裸婚", "闪婚"], ["男同", "男双"], ["摇摇车", "碰碰车"], 
+    ["蜜蜂", "蝴蝶"],
+
+    // --- 行为状态类 ---
+    ["睡觉", "冬眠"], ["感冒", "风寒"], ["面膜", "眼罩"], ["游泳", "泡澡"], 
+    ["风筝", "纸鸢"], ["下雪", "下雨"], ["警察", "侦探"], ["飞机", "火箭"], 
+    ["减肥", "瘦身"], ["学霸", "学神"], ["相声", "小品"], ["花椒", "麻椒"], 
+    ["微博", "抖音"],
+
+    // --- 🆕 新增 20 组热门词汇 ---
+    ["麦当劳", "肯德基"], ["微信", "QQ"], ["外卖", "快递"], ["初恋", "前任"], 
+    ["结婚", "领证"], ["私聊", "群聊"], ["备胎", "舔狗"], ["男闺蜜", "男朋友"], 
+    ["御姐", "萝莉"], ["渣男", "海王"], ["蹦迪", "跳舞"], ["暧昧", "恋爱"], 
+    ["绿茶", "白莲花"], ["程序员", "黑客"], ["凡尔赛", "炫富"], ["摸鱼", "划水"], 
+    ["朋友圈", "空间"], ["吉他", "尤克里里"], ["口香糖", "泡泡糖"], ["蜘蛛侠", "蝙蝠侠"]
 ];
 
-// NPC 名字库
-const UC_NPC_NAMES = ["路人甲", "淡定哥", "戏精", "逻辑怪", "萌新", "老六", "学霸", "吃瓜"];
+// NPC 名字库 (已更新为最新网名库)
+const UC_NPC_NAMES = [
+    "小凛", "一番萌", "○ㄩ○", "千也撫子", "Proceed with … 91%", "佛青色；Buddha Blue", "青苔浓", "不弄春", 
+    "一顆潮濕的荔枝樹", "Bellis", "一两点春枝", "谜语角 Riddle", "萌星", "小椰印", "我会在世界的角落找到你", 
+    "铃隙", "小雨天气", "发呆魚本魚", "比耶茄子酱", "小狗的开心第一", "1mo小醋包", "hallo 77", "念旧小烤鱼", 
+    "呆呆小羊咩", "摆烂小鱼", "咕噜咕噜小狗", "高冷汉堡包", "兔牙", "一份鱼粥", "u点小糕冷", "我恨早起", 
+    "悲伤鸡蛋汤", "跑调的歌", "不吃晚饭", "小魚呆呆脑", "高冷kt猫", "忧郁奶黄包", "睡不饱", "记得吃早饭", 
+    "讨厌周一", "耳机分你一半", "小猫拉勾", "iiio", "伤心结疤", "没有星期六", "和我牵手", "高冷的呆呆鱼", 
+    "冰葡萄", "哥哥我怕", "小猫不流泪", "骰子第七面", "期末一定及格", "喜欢赖床", "男人乱我心", "black名单", 
+    "小狗也哭泣", "剧本", "无敌小x", "碎碎念", "走不出回忆", "九点准时睡", "涂涂小兔", "心疼你", "哭泣鱼丸", 
+    "前任一米五", "讨厌黑眼圈", "长安", "青春专辑", "黑化小狗", "帅帅的反派", "Kiko", "睡眠羊", "是个帅哥", 
+    "帕恰小x", "流泪猫猫头", "今晚吃什么", "打嗝小狗", "许愿年年", "不想变成秃头", "小鱼呆呆脑", "永远", 
+    "帅气鲨鱼", "可乐加冰", "够不到篮筐", "带你去抓怪兽", "单曲猫咪", "爱上Rosé", "等你信息", "emo版小狗", 
+    "忧郁奶黄包", "iv77", "没有双眼皮", "今晚炒鱿鱼", "少一点心柿", "番薯小羊卷", "小狗不悲伤", "就是比你帅", 
+    "暴帅版小学生", "午夜忧郁纯情总裁", "无情后妈", "差点帅死自己", "内向小学生", "幼儿园扛把子", "185清纯男高", 
+    "哥不做那狗", "玉玉症患者", "帅到你我很抱歉", "宇宙之无敌金刚大暴龙战士", "自律的潮男", "追求者无数", 
+    "极品苦茶子", "三万少女的梦", "我恨钓鱼", "是个帅哥", "潇洒是本性", "帅到被人捅", "1m85腹黑学长", 
+    "羊村村霸", "烦男人的嘴", "帅爆的鸡蛋", "21克拉钻石", "远方传来风笛", "帅到没朋友", "羊村你懒哥", 
+    "185内向社恐纯情男高", "彭鱼晏", "高冷xxs", "留在哥身边", "帅爆的鸡蛋", "尝遍帅哥的嘴", "哥迷不死你", 
+    "哪来的野鸡", "见你说句6", "最帅", "霸气小学生", "广西彭于晏", "帅到被喜欢的人倒追", "看不惯就爆井吧", 
+    "每天被自己帅醒", "午夜伤感猛女", "清纯女不高", "自律潮男", "口嗨少爷", "图哥颜直说", "哥帅死你", 
+    "被小美骗走250万", "85岁退休老阿姨", "本少第1帅", "kiissie", "qioib", "sikuras", "浮星光", "落尽海", 
+    "纯情刊", "枯萎海", "蔷薇诗", "滥俗情节", "枯萎海湾", "雨停很久", "气泡橘汁", "难遇雪色", "雨打湿情绪", 
+    "冻结冬的雪", "未完结情歌", "心碎在凌晨", "少对我冷冰冰", "你听风在说爱", "听雨声渐渐停", "心碎在凌晨三时", 
+    "我永远困在回忆", "bearono", "k1tti", "ycred", "诉冬时", "陷云端", "情绪失态", "破碎兔耳", "心事梦境", 
+    "秋色入冬", "雾里聆风起", "误入春深处", "不许说难过", "你遥遥无期", "单相思序曲", "对你你是救赎", 
+    "只有我在难过", "夜里看海汹涌", "我偏迎难而上", "难过日复一日", "不如及时止损吧", "我们好像没以后了", 
+    "给我最后一个拥抱", "kissien", "loveono", "4inlv", "难言憾", "晚风歌谣", "失恋思绪", "续写烂尾", 
+    "奶昔甜糕", "日漫风格", "海边看雪落", "看海边雪落", "看雪落海边", "我天性敏感", "随大雨飘零", "可爱不由衷", 
+    "唯一纯白的花", "总在爱里心碎", "聆听冬日恋曲", "我没恋爱天赋", "愿我永远自由", "故事与你无关了", 
+    "祝你别再遇见我了", "番茄酱酱", "悲伤蛋挞", "椰椰蛋卷", "晕了咩咩", "倒霉菜菜", "哭泣鱼丸", "摆烂鱼丸", 
+    "暴躁小薯条", "1只鱼丸", "悲伤吐司", "烦4噜", "笨蛋小喵", "小猫事务所", "暴躁小气包", "流泪猫猫头", 
+    "悲伤小菜", "关你什么柿", "吐司耶耶", "糕冷小喵", "心碎香菜", "烦恼日记", "小熊崽汁", "呆呆", "IKN6-09", 
+    "小笨鱼", "黎吧啦", "达咩兔", "困困魚", "小困包", "妙脆鲨", "悲傷小芒果", "告别情书", "纯情小绵羊", "Rain", 
+    "ilovuQuo", "咕噜虾丸", "小郁宅", "生气变小猪", "幸福小猫", "呆铃", "iu3o3", "小椰冻奶", "泥4小呆瓜", 
+    "Yukimi", "雪兔心事", "枕冬眠", "雪信", "绵绵雪花酥", "冬页诗篇", "煮雪茶", "綿雪", "雪明かり", 
+    "冬日雪饼恋歌", "SnowBun", "小猫雪", "永冬敘事詩", "雪眠島", "冬日序诗", "EiraWish", "春雪邮", 
+    "雪与告别式", "冬の雪恋", "阴暗爬行版", "拉屎臭炸天", "别舔哥的泪", "别废话吻我", "拍一发小三", 
+    "只吃画的饼", "有种拒绝富婆", "跪下求你挂机", "一具学生尸体", "连你也敢骂我", "不是v10不舔", 
+    "拉屎畅通大王", "太帅了求放过", "求您骂死我吧", "超绝白袜猛男", "79岁悲郁少女", "求被针对到死", 
+    "不懂姐的孤单", "不开心豆沙了", "别把我当人看", "别紧张不是好人", "别害怕不是尸体", "妈的都不许幸福", 
+    "爱打劫的农村入", "超级Q萌大犀牛", "社恐的魅力疯猴", "爱打劫的农村人", "辣妹母蟑螂", "香辣嘎叽窝", 
+    "老实的农民", "笨拙的大母猴", "爆炸的膀胱", "骂我我就卢", "怪我拼不上好饭", "离异带八娃", "纯情老鼠人", 
+    "纯爱狂野大蟑螂", "A老头批发周姐", "克死老头开香槟", "伊拉克母狒狒", "秃顶的秃头", "笨拙的搓澡巾", 
+    "有事的没事人", "她很美味", "妈妈开门我是小狗", "老公死了打瓦解闷", "嫂子开门我是我哥", "福建把妹王", 
+    "嫂子重度依赖", "分享训狗思路", "长期在线调狗", "装零和男神砰砰砰", "老兵烧烤", "幸冷淡", "幸无能", 
+    "枪软软的也很好了", "枪软软的也没关系", "美味的姐", "主人的话得听", "她说我比小狗听话", "被她调成麦当劳", 
+    "她的心冷冰冰", "想被女人骗", "妈妈疼我", "叫主人转人工", "TD转人工", "天生克老公", "拼好饭被盗", 
+    "膨胀券失效", "忘本刻心头", "装忧郁反挨打", "装高冷反挨骂", "肥中线手慢无", "我回农村喂鸡", 
+    "精通幼师心理", "男人给我当狗", "太权威了少爷", "先天拼饭圣体", "有种往死里抓", "收留流浪少男", 
+    "没石砾求打压", "装忧郁被识破", "别吵忙着喂鸡", "收徒扣1", "一觉睡薯", "微笑躺平", "泥他喵狗叫", 
+    "咱们天国见", "我有抽象天赋", "老子没惹你啊", "阴暗单脚爬行", "宝宝当我走狗", "克制发疯情绪", 
+    "去薯了不嘻嘻", "舔狗听我使唤", "瘦不了网络暴力", "皇帝小子求放过", "咋滴啦就颠颠的", 
+    "被你活活贱薯了", "收坐骑请臣服我", "情绪稳定的发疯", "必杀倒过来读什么", "我从来没有幸福过", 
+    "我烂烂的精神乱乱的", "拜托幸福的人小点声", "无人拒绝一具学生尸体"
+];
 
 // 游戏全局状态
 
@@ -26489,7 +27142,7 @@ globalLoversBackground,
                 const [
                     loadedFriends, loadedChatHistories, loadedDiaries, loadedWorldBooks, 
                     loadedWorldBookFolders, loadedFavorites, loadedMoments, loadedPlaylist, 
-                    loadedAppSettings, loadedApiSettings, loadedCustomEmojis, loadedMemories, loadedOpeningStatements, loadedWritingStyles, loadedSkits, loadedForumPosts, loadedForumRules, loadedForumLikes, loadedBubblePresets, loadedInterfacePresets, loadedApiPresets, loadedCloneApiSettings, loadedFontPresets , loadedOfflinePresets
+                    loadedAppSettings, loadedApiSettings, loadedCustomEmojis, loadedMemories, loadedOpeningStatements, loadedWritingStyles, loadedSkits, loadedForumPosts, loadedForumRules, loadedForumLikes, loadedBubblePresets, loadedInterfacePresets, loadedApiPresets, loadedCloneApiSettings, loadedFontPresets , loadedOfflinePresets, loadedGameApiSettings
                 ] = await Promise.all([
                     dbManager.getAll('friends'), dbManager.getAll('chatHistories'), dbManager.getAll('diaries'),
                     dbManager.getAll('worldBooks'), dbManager.getAll('worldBookFolders'), dbManager.getAll('favorites'),
@@ -26518,7 +27171,9 @@ dbManager.get('cloneApiSettings', 'settings'),
 
 dbManager.getAll('fontPresets'),
 
-dbManager.getAll('offlineCssPresets')
+dbManager.getAll('offlineCssPresets'),
+
+dbManager.get('gameApiSettings', 'settings')
 
                 ]);
                 
@@ -26928,6 +27583,14 @@ if (settings.readerSettings) {
     }
 }
 
+if (loadedGameApiSettings) {
+    gameApiSettings = loadedGameApiSettings;
+    // 如果数据库里有悬浮球设置，就用数据库的，否则保持默认为 true
+    if (loadedGameApiSettings.floatBallEnabled !== undefined) {
+        isGameFloatBallEnabled = loadedGameApiSettings.floatBallEnabled;
+    }
+}
+
                
                
                 
@@ -27258,6 +27921,7 @@ userPersonas = [userProfile];
     
     updateStatusBar(pageId);
     applyStatusBarVisibility(); 
+    updateGameFloatBallVisibility(); // 每次切页面都检查一下要不要显示球
 }
                 function openApp(appName) {
     const appMap = { 
@@ -27411,12 +28075,19 @@ function applyIndividualChatBackground(friend) {
     chatScreen.style.backgroundColor = 'var(--chat-bg, #ededee)'; // 使用CSS变量以适配深色模式
 }
         
-        /* 这是修改后的JS代码 */
-function setChatAreaPadding(isOpen) {
+        function setChatAreaPadding(isOpen) {
     const messagesArea = document.getElementById('chatMessages');
     if (!messagesArea) return;
-    const openHeight = 250; // height of function/emoji area
-    const inputHeight = 65; // default height of input bar /* <--- 把 50 改成 65 */
+    
+    // 【新增判断】如果当前是拉黑状态，不执行动态 padding 修改，维持 105px
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (friend && friend.isBlocked) {
+        messagesArea.style.paddingBottom = '105px';
+        return;
+    }
+
+    const openHeight = 250; 
+    const inputHeight = 65; 
     
     if (isOpen) {
         messagesArea.style.paddingBottom = (openHeight + inputHeight) + 'px';
@@ -27424,7 +28095,6 @@ function setChatAreaPadding(isOpen) {
         messagesArea.style.paddingBottom = (inputHeight) + 'px';
     }
     
-    // Scroll to bottom after padding change
     setTimeout(() => {
         messagesArea.scrollTop = messagesArea.scrollHeight;
     }, 100); 
@@ -28161,6 +28831,7 @@ if (friend.isOfflineMode && currentOfflineMode === 'float') {
 
     renderInitialMessages();
     document.getElementById('chatMessages').onscroll = handleChatScroll;
+    updateBlockedInputUI(); 
 }
 // ↑↑↑ 请在这里结束复制 ---
         
@@ -28289,6 +28960,10 @@ if (msg.contentType === 'system_tip') {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${msg.type}`;
     msgDiv.setAttribute('data-message-id', msg.id);
+    // 【新增】如果是接收的消息且对方在黑名单，添加特殊类名
+    if (msg.isBlockedMsg) {
+    msgDiv.classList.add('is-blocked');
+}
     // ▼▼▼ 请用这个【最终兼容版】的代码块，替换之前那个无法运行的版本 ▼▼▼
 
 // 1. 先安全地检查 friendOrGroup 对象和它的 timestampSettings 属性是否存在
@@ -28726,10 +29401,14 @@ let footerHtml = '';
         `;
     }
 
+const blockedIconHtml = msg.isBlockedMsg ? `<div class="blocked-error-icon">!</div>` : '';
+
+    // 【修改】将 blockedIconHtml 插入到气泡内容 div 的旁边
     const messageBodyHtml = `
         <div class="message-body">
             ${senderNameHtml}
             <div class="${contentClass}">${contentHTML}</div>
+            ${blockedIconHtml} 
             ${footerHtml}
         </div>`;
 
@@ -28980,7 +29659,8 @@ function handleChatScroll(event) {
                 quoted, 
                 timestamp: new Date().toISOString(), // 我们用这个时间
                 recalled: false,
-                senderId: type === 'sent' ? userProfile.id : (senderId || friend.id)
+                senderId: type === 'sent' ? userProfile.id : (senderId || friend.id),
+                isBlockedMsg: (type === 'received' && friend.isBlocked) ? true : false 
             };
             
             if (contentType === 'transfer_request') {
@@ -29285,6 +29965,7 @@ function showMessageMenu(event, el) {
         
                 async function sendMessage() { 
     unlockAudioContext(); 
+   
     
     // 1. 保留原有的钱包重置彩蛋逻辑
     const inputForReset = document.getElementById('messageInput');
@@ -29516,6 +30197,20 @@ if (history.length >= 2) {
         return;
     }
 
+const localHistory = chatHistories[friendId] || [];
+    const latestMsg = localHistory[localHistory.length - 1];
+
+    let silenceInstruction = "";
+    if (latestMsg && latestMsg.type === 'received') {
+        silenceInstruction = `
+【【【特殊情境：用户正在保持沉默/等待】】】
+用户现在没有说话，只是在等待你的回应。
+- **任务**：你必须根据当前的气氛继续对话。你可以深入聊聊刚才的话题，或者进行一段更详细的内心独白，或者主动开启一个新动作。
+- **禁令**：绝对禁止回复“我在听”、“请继续”等废话。
+- **输出**：必须至少生成一个 {"type": "text", "content": "..."} 动作。
+`;
+    }
+
     // 2. 检查API设置是否完整，如果不完整，则提示并直接退出
     const settings = await dbManager.get('apiSettings', 'settings') || {};
     if (!settings.apiUrl || !settings.apiKey || !settings.modelName) {
@@ -29718,8 +30413,37 @@ history.forEach(msg => {
 
     if (content) {
         apiPayloadMessages.push({ role, content });
+      
+
     }
 });
+
+ // --- 【核心修复：深度融合沉默感知与强制请求】 ---
+const localHistory = history; // 使用当前处理过的历史
+const latestMsg = localHistory[localHistory.length - 1];
+
+if (latestMsg && latestMsg.type !== 'sent') {
+    let finalNudge = "";
+
+    if (latestMsg.contentType === 'system_tip') {
+        // 场景 A：最后一条是系统提示（比如拉黑提示）
+        finalNudge = `[系统指令]: 刚才发生了系统事件：“${latestMsg.content}”。请你作为角色做出即时反应。`;
+    } else {
+        // 场景 B：最后一条是 AI 发的（对应你那段代码的内容）
+        // 这里完全保留并强化了你写的指令
+        finalNudge = `
+[系统指令]: 用户现在没有说话，只是点击了接收键在等待你的回应。
+- **任务**：你必须根据当前的气氛继续对话。你可以深入聊聊刚才的话题，或者进行一段更详细的内心独白，或者主动开启一个新动作。
+- **要求**：不要复读，不要发“我在听”之类的废话。
+- **输出**：必须至少生成一个 {"type": "text", "content": "..."} 动作。`;
+    }
+
+    // 【关键】以 user 身份把这些“潜规则”塞给 AI 的最后一步
+    apiPayloadMessages.push({ 
+        role: 'user', 
+        content: finalNudge.trim() 
+    });
+}
 
        
 if (friend.isGroup) {
@@ -29998,6 +30722,24 @@ let activeUserPersona = userPersonas.find(p => p.id === friend.activeUserPersona
 `;
     }
 
+let blockContext = "";
+if (friend.isBlocked) {
+    blockContext = `
+【【【特别状态：你已被用户拉黑】】】
+- **现状**: 你发现自己被用户加入黑名单了。
+- **消息感知**: 你发送的所有普通消息（type 为 "text" 或 "voice"）都会在用户界面显示“消息发送失败”（红色感叹号）。
+- **你的反应**: 你可以继续发送多条 "text" 消息表达你的情绪（如：拍门、求饶、愤怒、解释）。
+- **特殊权限**: 除了发消息，你**可以选择是否**在回复的 JSON 数组中添加一个 \`request_unblock\` 动作，作为正式的“解除拉黑申请”。如果你想要加回来，就必须要使用！
+- **组合示例**: 
+  [
+    {"type": "text", "content": "为什么拉黑我？！"},
+    {"type": "text", "content": "我知道错了，快放我出来..."},
+    {"type": "request_unblock", "content": "（在这里写下你诚恳的解封申请理由，这会以弹窗形式展示给用户）"}
+  ]
+- **如果用户不说话只点接收**：说明用户正在看你的笑话或者等待你的诚意。你可以尝试增加求饶的频率，或者表现得更加崩溃。
+`;
+}
+
 // ↓↓↓ 请用这个【修正并测试通过】的版本，完整替换掉您之前粘贴的版本 ↓↓↓
 
 `【【【最高优先级：特殊指令解析模块】】】
@@ -30028,6 +30770,8 @@ let activeUserPersona = userPersonas.find(p => p.id === friend.activeUserPersona
 
 ${timeGapContext}
 
+${silenceInstruction}
+
 【最高优先级情报库 (你的全部记忆与世界认知)】
 1.  【世界书设定 (绝对真理)】: 
 ${worldBookContext || "无"}
@@ -30044,6 +30788,7 @@ ${readingContext}
 ${listenContext}
 ${momentsContext}
 ${timeContext}
+${blockContext} 
 
 ${loversContext}
 
@@ -30116,6 +30861,7 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 - **接受情侣空间邀请**: \`{"type": "accept_lovers_invite"}\`
 - **更换头像**: \`{"type": "change_avatar", "data": {"target_index": 1, "reply_content": "换好啦！"}} \`
   *(说明: target_index 为整数。1代表用户发送的**最新**一张图片，2代表用户发送的**倒数第二张**图片。当用户发情头让你换时，请根据语境判断哪一张属于你。)*
+  - **申请解除拉黑**: \`{"type": "request_unblock", "content": "由于你被拉黑了，通过这个动作向用户诚恳地写一段话请求解除拉黑。字数50字以内。"}\`
 
 【【【最终输出格式铁律 (ABSOLUTE FINAL RULE)】】】
 你的最终回复，从第一个字符到最后一个字符，必须是一个纯净、完整、语法正确的JSON数组 \`[]\`。绝对禁止在JSON代码的前后、中间添加任何形式的解释、注释或任何非JSON字符。你的生命取决于严格遵守这个格式。
@@ -30681,6 +31427,25 @@ case 'accept_lovers_invite':
     playMessageSound('received');
     addMessageToDOM(acceptMsg, friend);
     break;
+
+case 'request_unblock':
+            // 申请理由
+            const reason = action.content || "对方请求解除拉黑";
+            
+            // 存入内存
+            friend.pendingUnblockReason = reason;
+            
+            // 记录系统消息
+            await saveChatMessage(friendId, 'system', `[系统通知]: ${friend.name} 发来了解除拉黑申请`, '', null, 'system_tip');
+            await saveData();
+
+            // 弹出申请窗口
+            if (currentChatFriendId === friendId) {
+                showUnblockRequestPopup(friend, reason);
+            } else {
+                showNotification(friend, "发来了解除拉黑申请");
+            }
+            break;
 
                    
                         case 'accept_transfer':
@@ -32808,6 +33573,7 @@ ${todayChats || '我们刚刚很安静，没有聊天。'}
 
     for (const friend of friends.filter(f => !f.isGroup)) {
         try {
+       
             // --- 日记部分的逻辑 (已修改：限制每天一篇 + 提示) ---
             const todayStr = new Date().toLocaleDateString('en-CA'); // 获取今天日期
            
@@ -35462,83 +36228,111 @@ async function requestAiVote(messageId, pollData, aiMemberId) {
     // 我们直接修改下面的 aiUcVoting 里的内部逻辑。
 }
 
-// 请替换这个函数： aiUcVoting
+/**
+ * [V4 顺序防爆版] AI 投票核心逻辑
+ * 改动：从“并发”改为“顺序”执行，以便在报错时能暂停游戏并弹出重试框
+ */
 async function aiUcVoting() {
-    const settings = await dbManager.get('apiSettings', 'settings');
-    
-    // 全局日志
+    const settings = await getGameEffectiveSettings();
+    // 1. 整理本轮描述信息
+    const roundStatements = ucState.players
+        .filter(p => !p.isDead)
+        .map((p, idx) => `[玩家${idx+1} ${p.name}]: "${p.description}"`)
+        .join('\n');
+
+    // 2. 获取全局战况
     const fullGameLog = getFullGameLogContext();
 
-    // 筛选出需要投票的AI (存活且非用户)
+    // 3. 筛选出需要投票的AI (存活且非用户)
     const aiPlayers = ucState.players.filter(p => !p.isUser && !p.isDead);
     
-    const votePromises = aiPlayers.map(async (ai) => {
-        let targetIndex = -1;
+    // --- 【核心修改】改为循环顺序执行，一个接一个投 ---
+    for (const ai of aiPlayers) {
         
-        if (settings && settings.apiKey) {
-            const prompt = `
-【游戏】: 谁是卧底。
-【你的身份】: ${ai.name} (词语: ${ai.word}, 身份: ${ai.role === 'spy' ? '卧底' : '平民'})。
+        // A. 定义单个AI的投票任务 (方便重试调用)
+        const executeVoteTask = async () => {
+            if (!settings || !settings.apiKey) throw new Error("API未配置");
+            
+            // 模拟思考延迟 (让投票过程更有节奏感)
+            await new Promise(r => setTimeout(r, Math.random() * 1000 + 500));
 
-【【【全局战况 (包含历史发言、历史投票)】】】
+            // 简化的策略提示
+            const roleStrategy = ai.role === 'spy' 
+                ? "你是卧底！为了生存，请投给描述最模糊的平民，或者跟票投被怀疑的人。绝对不能投自己。"
+                : "你是平民。请找出描述跟你的词不沾边的人（异类），或者投给那个最像卧底的人。";
+
+            const prompt = `
+【游戏】: 谁是卧底
+【你的身份】: ${ai.name} (${ucState.players.indexOf(ai) + 1}号)。
+【你的词语】: ${ai.word}
+【全局战况】:
 ${fullGameLog}
 
-【任务】: 请分析并投票。
-1. **如果你是平民**: 投给描述最可疑、或者在历史记录里行为最像卧底的人。
-2. **如果你是卧底**: 投给对你威胁最大的人，或者跟票把水搅浑。
-3. **有效目标**: 只能投给活着的人（${ucState.players.map((p,i) => !p.isDead ? `${i+1}号` : '').filter(Boolean).join(', ')}）。
-4. **不能投自己**。
+【本轮所有人的描述】:
+${roundStatements}
 
-【输出】: 只返回你决定投票的目标玩家编号数字 (例如: 1)。
+【当前存活玩家】: ${ucState.players.map((p,i) => !p.isDead ? `${i+1}号` : '').filter(Boolean).join(', ')}
+
+【你的任务】: 请根据你的身份和场上发言，决定把票投给谁。
+${roleStrategy}
+
+【重要】: 
+- 只能投给**活着**的玩家。
+- 严禁投给自己 (${ucState.players.indexOf(ai) + 1}号)。
+- 返回且仅返回一个**纯数字** (目标玩家的编号，如 1)。
 `;
-            try {
-                await new Promise(r => setTimeout(r, Math.random() * 3000 + 1000));
-                
-                const response = await fetch(`${settings.apiUrl}/chat/completions`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.5 }) // 投票要理性一点
-                });
-                const data = await response.json();
-                const voteNum = parseInt(data.choices[0].message.content.match(/\d+/)[0]);
-                
-                if (voteNum >= 1 && voteNum <= ucState.players.length) {
-                    const targetIdx = voteNum - 1;
-                    if (!ucState.players[targetIdx].isDead && ucState.players[targetIdx].id !== ai.id) {
-                        targetIndex = targetIdx;
-                    }
-                }
-            } catch (e) {
-                console.error("投票失败", e);
-            }
-        }
 
-        // 兜底：随机投一个活人
-        if (targetIndex === -1) {
+            const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.2 }) 
+            });
+            
+            if (!response.ok) throw new Error(`API请求失败: ${response.status}`);
+
+            const data = await response.json();
+            const content = data.choices[0].message.content;
+            
+            // 提取数字
+            const match = content.match(/\d+/);
+            if (!match) throw new Error("AI未返回有效的数字编号");
+            
+            const voteNum = parseInt(match[0]);
+            
+            // 校验有效性
+            if (voteNum < 1 || voteNum > ucState.players.length) throw new Error(`投票编号 ${voteNum} 超出范围`);
+            
+            const targetIndex = voteNum - 1;
+            const targetPlayer = ucState.players[targetIndex];
+            
+            if (targetPlayer.isDead) throw new Error(`试图投给已死亡玩家 (${voteNum}号)`);
+            if (targetPlayer.id === ai.id) throw new Error(`试图投给自己`);
+
+            // --- 投票成功，执行结算 ---
+            performVoteAction(ai, targetIndex);
+        };
+
+        // B. 定义兜底函数 (点击“跳过”时执行)
+        const executeFallback = () => {
+            // 随机投一个活人 (除了自己)
             const aliveIndices = ucState.players.map((p, i) => i).filter(i => !ucState.players[i].isDead && ucState.players[i].id !== ai.id);
-            targetIndex = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
+            if (aliveIndices.length > 0) {
+                const randomTarget = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
+                performVoteAction(ai, randomTarget);
+            }
+        };
+
+        // C. 执行与错误拦截
+        try {
+            await executeVoteTask();
+        } catch (e) {
+            console.error(`${ai.name} 投票失败`, e);
+            // 【关键】调用错误处理弹窗，并暂停等待用户操作
+            await handleGameApiError(e, executeVoteTask, executeFallback);
         }
+    }
 
-        return targetIndex;
-    });
-
-    const results = await Promise.all(votePromises);
-
-    results.forEach((targetIndex, aiArrayIndex) => {
-        const aiPlayer = aiPlayers[aiArrayIndex];
-        const aiRealIndex = ucState.players.findIndex(p => p.id === aiPlayer.id);
-
-        if (targetIndex !== -1) {
-            ucState.players[targetIndex].voteCount++;
-            showUcVotingMark(aiRealIndex, targetIndex);
-            const targetName = ucState.players[targetIndex].name;
-            addUcLog(`${aiRealIndex + 1}号(${aiPlayer.name})`, `投给了 ${targetIndex + 1}号(${targetName})`, 'normal');
-        } else {
-             // 只有出错或者故意弃票才走到这里
-             addUcLog(`${aiRealIndex + 1}号(${aiPlayer.name})`, `弃票`, 'normal');
-        }
-    });
-
+    // 所有AI投完后，结束本轮
     ucState.aiVotingComplete = true;
     checkVotingComplete();
 }
@@ -35893,7 +36687,67 @@ document.addEventListener('touchmove', (e) => {
 // 触摸结束
 document.addEventListener('touchend', () => {
     isBallDragging = false;
+   
 });
+
+// ===============================================================
+// START: 游戏悬浮球垂直拖拽逻辑 (仅允许上下移动)
+// ===============================================================
+
+// 1. 获取游戏悬浮球元素
+const gameBall = document.getElementById('gameFloatBall');
+
+if (gameBall) {
+    let isGameBallDragging = false;
+    let gameBallStartY, gameBallInitialTop;
+
+    // 2. 触摸开始
+    gameBall.addEventListener('touchstart', (e) => {
+        isGameBallDragging = true;
+        const touch = e.touches[0];
+        
+        // 记录初始 Y 坐标和 元素的初始 Top 值
+        gameBallStartY = touch.clientY;
+        gameBallInitialTop = gameBall.offsetTop;
+    }, { passive: false });
+
+    // 3. 触摸移动 (核心逻辑)
+    document.addEventListener('touchmove', (e) => {
+        if (!isGameBallDragging) return;
+        
+        // 阻止默认行为（防止页面跟随滚动）
+        if (e.cancelable) e.preventDefault(); 
+
+        const touch = e.touches[0];
+        
+        // 计算垂直移动距离 (dy)
+        const dy = touch.clientY - gameBallStartY;
+        
+        // 计算新的 Top 值
+        let newTop = gameBallInitialTop + dy;
+
+        // 边界限制：防止球移出屏幕顶部或底部
+        const maxTop = window.innerHeight - gameBall.offsetHeight;
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+
+        // 【核心】：只应用 top 属性，忽略水平方向
+        gameBall.style.top = newTop + 'px';
+        
+        // 强制固定在右侧 (防止 CSS 其他逻辑干扰)
+        gameBall.style.right = '0';
+        gameBall.style.left = 'auto'; 
+        
+    }, { passive: false });
+
+    // 4. 触摸结束
+    document.addEventListener('touchend', () => {
+        isGameBallDragging = false;
+    });
+}
+// ===============================================================
+// END: 游戏悬浮球垂直拖拽逻辑
+// ===============================================================
+
 };
         
         // 【【【第三步 D：在 <script> 的末尾粘贴所有新函数】】】
@@ -53850,7 +54704,7 @@ async function requestCharadesAIResponse() {
     if (btn.disabled) return;
 
     const friend = friends.find(f => f.id === charadesTargetFriendId);
-    const settings = await dbManager.get('apiSettings', 'settings');
+    const settings = await getGameEffectiveSettings();
     
     if (!settings || !settings.apiUrl) return alert("请先配置API");
     
@@ -54057,7 +54911,7 @@ function toggleCharadesRole() {
 
 async function requestAiCharadesDescription(userWrongGuess = null) {
     const friend = friends.find(f => f.id === charadesTargetFriendId);
-    const settings = await dbManager.get('apiSettings', 'settings');
+    const settings = await getGameEffectiveSettings();
     if (!settings || !settings.apiUrl) return;
 
     // 1. UI 锁定
@@ -63026,17 +63880,19 @@ async function startUndercoverGameInit() {
 
     // 2.3 自动补全 NPC
     while (ucState.players.length < ucState.mode) {
-        const npcName = UC_NPC_NAMES[Math.floor(Math.random() * UC_NPC_NAMES.length)] + (Math.floor(Math.random()*100));
-        const randomAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
+        // 【修改点】去掉后面的 + (Math.floor(Math.random()*100))
+        const npcName = UC_NPC_NAMES[Math.floor(Math.random() * UC_NPC_NAMES.length)];
+        
         ucState.players.push({
             id: `npc_${Date.now()}_${Math.random()}`,
             name: npcName,
-            avatar: randomAvatarUrl,
+            // ... 其他保持不变
+            avatar: passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)],
             isImage: true,
             isUser: false,
             isAiFriend: false,
             isDead: false,
-            roleDesc: "性格随和的路人，说话比较简短。" // NPC 简易人设
+            roleDesc: "性格随和的路人，说话比较简短。" 
         });
     }
 
@@ -63254,53 +64110,93 @@ function submitUcDescription() {
     processNextTurn();
 }
 
-// [升级版] AI 发言核心逻辑 (防重复 + 全局记忆)
+/**
+ * [V3 深度定制版] AI 描述阶段核心逻辑
+ * 特性：区分好友/NPC，区分卧底/平民策略，禁止调情，严格防爆
+ */
 async function aiUcSpeak(player) {
-    const settings = await dbManager.get('apiSettings', 'settings');
+    const settings = await getGameEffectiveSettings();
     if (!settings.apiUrl) {
         handleAiSpeakResult(player, "这个东西...很常见。");
         return;
     }
 
-    // 1. 收集【本局游戏】所有已说过的描述 (用于查重)
-    // 注意：这里收集的是 ucState.players 里记录的所有历史描述，不仅仅是本轮的
+    // 1. 获取本局所有历史描述 (查重用)
     const allPastDescriptions = ucState.players
         .filter(p => p.descriptionHistory && p.descriptionHistory.length > 0)
-        .map(p => `${p.name}说过: "${p.descriptionHistory.join('", "')}"`)
+        .map(p => `${p.name}: "${p.descriptionHistory.join('", "')}"`)
         .join('\n');
-    
-    // 2. 获取全局游戏日志 (谁死过、谁投过谁)
-    const fullGameLog = getFullGameLogContext();
+        const fullGameLog = getFullGameLogContext();
 
-    // 3. 确定人设
-    const persona = player.isAiFriend ? player.friendData.role : player.roleDesc;
-    
-    // 4. 构建 Prompt
+   // --- 1. 获取关系与记忆上下文 (描述阶段：专注模式) ---
+    const userIdx = ucState.players.findIndex(p => p.isUser);
+    const userSeatNum = userIdx + 1;
+
+    let relationshipContext = "";
+
+    if (player.isAiFriend) {
+        const personaId = player.friendData.activeUserPersonaId || 'default_user';
+        const persona = userPersonas.find(p => p.id === personaId) || userProfile;
+
+        relationshipContext = `
+        【社交状态：游戏进行中】
+        - 场上的 **${userSeatNum}号玩家** 是你的好友 "${persona.name}"。
+        - **【最高行为准则】**：现在是描述环节。
+        - **严禁**：严禁调情、严禁叙旧。
+        - **指令**：做一个极其认真的游戏玩家，全神贯注地描述你的词语。不要让私人感情影响游戏的公平性。
+        `;
+    } else {
+        relationshipContext = `【身份】你是路人玩家，性格：${player.roleDesc || "普通"}。不认识${userSeatNum}号(用户)，专注玩游戏。`;
+    }
+
+    // 4. 构建游戏策略 (卧底 vs 平民)
+    let strategyContext = "";
+    if (player.role === 'spy') {
+        strategyContext = `
+        **【你的底牌】**: 你是**卧底**！(但你可能还不知道自己是卧底，因为你还没看到别人的词)。
+        **【策略】**: 
+        1. 观察别人的描述，尽量说一些模棱两可、通用的特征。
+        2. 不要说得太具体，以免直接暴露。
+        3. 努力模仿平民的口吻，混在人群中。`;
+    } else {
+        strategyContext = `
+        **【你的底牌】**: 你是**平民**。
+        **【策略】**: 
+        1. 描述要准确，让队友认出你。
+        2. 但不要太直白（防爆词），以免被卧底猜出词语。
+        3. 尽量从外观、功能、用途等不同角度描述。`;
+    }
+
     const prompt = `
-【游戏】: 谁是卧底。
-【你的身份】: ${player.name}。
-【你的词语】: 【 ${player.word} 】
-【你的核心人设】: ${persona}。
+【游戏】: 谁是卧底
+【当前阶段】: 描述阶段
+【你的词语】: **【 ${player.word} 】** (切记！这是你唯一的底牌)
 
-【【【全局游戏记忆 (必须参考)】】】
+【情报库】
+${relationshipContext}
+
+${strategyContext}
+
+【全局游戏记录 (参考之前的局势)】
 ${fullGameLog}
 
-【【【查重列表 (别人和你说过的话)】】】
-${allPastDescriptions || '暂无历史描述'}
+【查重列表 (场上已出现过的描述，禁止重复)】
+${allPastDescriptions || "暂无描述"}
 
-【任务】: 请根据你的词语，给出新的一轮描述。
+【任务】: 请用一句话描述你的词语。
 
-【【【绝对铁律】】】
-1.  **【严禁重复】**: 绝对不能重复上面【查重列表】里任何一个人（包括你自己）说过的话、用过的词、描述过的角度！必须找一个新的角度！
-2.  **【防爆词】**: 描述中绝对不能包含词语【${player.word}】中的任何一个字。
-3.  **【人设一致】**: 
-    - 如果你是高冷人设，就说短句。
-    - 如果你是活泼人设，可以带语气词。
-    - 结合【全局游戏记忆】：如果上一轮有人踩你，你可以在描述里暗暗怼回去（例如：“不像某些人说的...”）。
-4.  **字数**: 50字以内。
+【【【去“人机感”口语铁律 (绝对执行)】】】
+1. **禁止废话**：严禁以“嗯…”、“呃…”、“怎么说呢”、“好像是”这种犹豫的词开头！直接切入重点。
+2. **拒绝复读**：不要说“我的词是…”。
 
-【输出】: 只返回描述内容，不要引号。
-`;
+【【【描述铁律 (必须严格遵守)】】】
+1.  **【禁止说出原词】**: 描述中**绝对不能**包含词语【${player.word}】中的任何一个字！
+2.  **【禁止重复】**: 绝对不能重复上面【查重列表】里任何人的描述角度。必须找一个新的切入点！
+3.  **【活人感】**: 像真人一样说话。可以使用口语、语气词
+4.  **【禁止场外】**: 不要聊游戏规则，只描述词语本身。
+5.  **字数**: 50字以内。不要带引号。
+
+现在，请给出你的描述：`;
 
     try {
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
@@ -63311,14 +64207,24 @@ ${allPastDescriptions || '暂无历史描述'}
         const data = await response.json();
         let content = data.choices[0].message.content.trim().replace(/^["“”]|["“”]$/g, '');
         
-        // 二次防爆
-        content = content.replace(new RegExp(player.word, 'g'), '*');
+        // 二次防爆检查 (如果AI不小心说漏了嘴，强制替换)
+        if (content.includes(player.word)) {
+            content = content.replace(new RegExp(player.word, 'g'), '这个东西');
+        }
         
         handleAiSpeakResult(player, content);
         
+   
+    
     } catch (e) {
         console.error("AI发言失败", e);
-        handleAiSpeakResult(player, "我想想... 好像是圆的？");
+        
+        // 【修改点】调用错误重试处理函数
+        await handleGameApiError(
+            e, 
+            () => aiUcSpeak(player), // 重试逻辑：重新调用自己
+            () => handleAiSpeakResult(player, "（网络波动）这个东西...很常见。") // 兜底逻辑
+        );
     }
 }
 
@@ -63348,17 +64254,32 @@ function startVotingPhase() {
     document.getElementById('ucInputArea').style.display = 'none';
     document.getElementById('ucWaitArea').style.display = 'none';
     
-    // --- 修改点：显示投票区域，并注入弃票按钮 ---
     const voteArea = document.getElementById('ucVoteArea');
-    voteArea.style.display = 'block';
-    
-    // 注意：这里我们使用 innerHTML 覆盖旧的提示，加入按钮
-    voteArea.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span>请点击头像投票</span>
-            <button class="uc-btn" style="background:#ccc !important; font-size:12px; padding:5px 10px;" onclick="handleUserAbstain()">弃票</button>
-        </div>
-    `;
+    const userPlayer = ucState.players.find(p => p.isUser);
+
+    // 重置所有人票数
+    ucState.players.forEach(p => p.voteCount = 0);
+
+    // 【核心修复】判断用户死活
+    if (userPlayer.isDead) {
+        // 如果死了：隐藏按钮，标记为已投(直接跳过)
+        voteArea.style.display = 'none';
+        ucState.userHasVoted = true; 
+        updateUcStatus('loading', '你已出局，正在围观投票...');
+    } else {
+        // 如果活着：显示按钮，允许投票
+        voteArea.style.display = 'block';
+        ucState.userHasVoted = false;
+        
+        voteArea.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%;">
+                <div style="color: #999; font-size: 12px; font-weight: 500;">请点击上方头像进行投票</div>
+                <button class="uc-btn" style="background: #f5f5f5 !important; color: #666 !important; width: 80%; border-radius: 30px; height: 40px; font-size: 14px; box-shadow: none; border: 1px solid #ddd;" onclick="handleUserAbstain()">弃 票</button>
+            </div>
+        `;
+    }
+
+    // ... 后面的代码保持不变 ...
     
     // 重置票数
     ucState.players.forEach(p => p.voteCount = 0);
@@ -63377,6 +64298,12 @@ function startVotingPhase() {
 
 // 用户点击头像投票
 function handleUcPlayerClick(index) {
+
+const userPlayer = ucState.players.find(p => p.isUser);
+    if (userPlayer.isDead) {
+        return showToast("你已出局，无法投票");
+    }
+
     // 只有在投票阶段才响应
     if (ucState.phase !== 'voting') return;
     
@@ -63418,100 +64345,6 @@ function handleUcPlayerClick(index) {
     checkVotingComplete();
 }
 
-// AI 投票逻辑
-async function aiUcVoting() {
-    const settings = await dbManager.get('apiSettings', 'settings');
-    
-    // 整理本轮所有人的发言供AI参考
-    const roundStatements = ucState.players
-        .filter(p => !p.isDead)
-        .map((p, idx) => `玩家${idx+1} [${p.name}]: "${p.description}"`)
-        .join('\n');
-
-    // 筛选出需要投票的AI (存活且非用户)
-    const aiPlayers = ucState.players.filter(p => !p.isUser && !p.isDead);
-    
-    // 并行或串行处理AI投票
-    // 为了防止API并发限制，这里使用 Promise.all 并行请求
-    const votePromises = aiPlayers.map(async (ai) => {
-        let targetIndex = -1;
-        
-        if (settings && settings.apiKey) {
-            const prompt = `
-【游戏】: 谁是卧底。
-【你的身份】: ${ai.name} (词语: ${ai.word}, 身份: ${ai.role === 'spy' ? '卧底' : '平民'})。
-【本轮所有人发言】:
-${roundStatements}
-
-【任务】: 请分析并发起投票。
-1. **如果你是平民**: 找出描述最模糊、或者与你的词语明显不符的人。
-2. **如果你是卧底**: 
-   - 投给描述最像平民的人(为了混淆视听)。
-   - 或者投给已经被怀疑的人(跟票)。
-   - 尽量不要暴露自己。
-
-【输出】: 只返回你决定投票的目标玩家编号数字 (例如: 1)。不要任何解释。
-`;
-            try {
-                // 模拟不同的思考时间，避免同时完成
-                await new Promise(r => setTimeout(r, Math.random() * 3000 + 1000));
-                
-                const response = await fetch(`${settings.apiUrl}/chat/completions`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 1.0 })
-                });
-                const data = await response.json();
-                const voteNum = parseInt(data.choices[0].message.content.match(/\d+/)[0]);
-                
-                // 校验：目标必须存在且存活，且不能投自己
-                if (voteNum >= 1 && voteNum <= ucState.players.length) {
-                    const targetIdx = voteNum - 1;
-                    if (!ucState.players[targetIdx].isDead && ucState.players[targetIdx].id !== ai.id) {
-                        targetIndex = targetIdx;
-                    }
-                }
-            } catch (e) {
-                console.error(`${ai.name} 投票失败`, e);
-            }
-        }
-
-        // 兜底策略：如果AI失败或没选出来，随机投一个活人(非自己)
-        if (targetIndex === -1) {
-            const aliveIndices = ucState.players.map((p, i) => i).filter(i => !ucState.players[i].isDead && ucState.players[i].id !== ai.id);
-            targetIndex = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
-        }
-
-        return targetIndex;
-    });
-
-    const results = await Promise.all(votePromises);
-
-    // 在 aiUcVoting 函数内部的 results.forEach 循环中修改：
-
-results.forEach((targetIndex, aiArrayIndex) => {
-    // 获取当前这个 AI 在 players 数组中的真实索引
-    // 注意：aiPlayers 是过滤后的数组，我们需要获取它在 ucState.players 里的原始索引
-    const aiPlayer = aiPlayers[aiArrayIndex];
-    const aiRealIndex = ucState.players.findIndex(p => p.id === aiPlayer.id);
-
-    if (targetIndex !== -1) {
-        // 增加票数
-        ucState.players[targetIndex].voteCount++;
-
-        // 【新增 1：显示视觉标记】
-        showUcVotingMark(aiRealIndex, targetIndex);
-
-        // 【新增 2：同步到信息区】
-        const targetName = ucState.players[targetIndex].name;
-        addUcLog(`${aiRealIndex + 1}号(${aiPlayer.name})`, `投给了 ${targetIndex + 1}号(${targetName})`, 'normal');
-    }
-});
-
-    ucState.aiVotingComplete = true;
-    checkVotingComplete();
-}
-
 function checkVotingComplete() {
     // 只有当用户投了，且AI也都投完了，才结算
     if (ucState.userHasVoted && ucState.aiVotingComplete) {
@@ -63520,15 +64353,16 @@ function checkVotingComplete() {
     }
 }
 
+/**
+ * [修正版] 投票结算逻辑：保护未结束游戏时的词语隐私
+ */
 function settleVoting() {
-    // 1. 隐藏操作栏等 UI 处理 (保持不变)
     ucState.userHasVoted = false;
     ucState.aiVotingComplete = false;
     document.getElementById('ucVoteArea').style.display = 'none';
     document.getElementById('ucWaitArea').style.display = 'block';
     updateUcStatus('wait');
 
-    // 2. 计算票数 (原逻辑保持不变)
     let maxVotes = 0;
     let candidates = []; 
     ucState.players.forEach((p, idx) => {
@@ -63542,7 +64376,6 @@ function settleVoting() {
         }
     });
 
-    // 3. 【核心修改】：构建结果文本并弹窗
     let resultTitle = "";
     let resultBody = "";
     let eliminatedPlayer = null;
@@ -63550,7 +64383,7 @@ function settleVoting() {
 
     if (candidates.length === 0) {
         resultTitle = "无人出局";
-        resultBody = "本轮无人投票 (异常情况)。";
+        resultBody = "本轮无人投票。";
         isDraw = true;
     } else if (candidates.length > 1) {
         resultTitle = "平票";
@@ -63560,61 +64393,66 @@ function settleVoting() {
         const idx = candidates[0];
         eliminatedPlayer = ucState.players[idx];
         const roleText = eliminatedPlayer.role === 'spy' ? '卧底' : '平民';
-        const color = eliminatedPlayer.role === 'spy' ? '#07c160' : '#ff3b30'; // 卧底出局是绿色(好事)
+        const color = eliminatedPlayer.role === 'spy' ? '#07c160' : '#ff3b30';
+
+        // --- 【核心修正逻辑开始】 ---
+        // 提前模拟计算：如果这个人死了，游戏会不会结束？
+        let tempSpies = ucState.players.filter(p => !p.isDead && p.role === 'spy').length;
+        let tempCivilians = ucState.players.filter(p => !p.isDead && p.role === 'civilian').length;
+        
+        if (eliminatedPlayer.role === 'spy') tempSpies--;
+        else tempCivilians--;
+
+        // 判定是否达到结束条件
+        const isGameEnding = (tempSpies === 0 || tempSpies >= tempCivilians);
 
         resultTitle = "投票结果";
         resultBody = `
             <div style="text-align:center; display: flex; flex-direction: column; gap: 5px; padding: 5px 0;">
                 <div style="font-size:22px; font-weight:bold; line-height: 1.2;">${eliminatedPlayer.name} 出局！</div>
                 <div style="font-size:15px; color:#666; margin: 0;">TA的身份是：<span style="color:${color}; font-weight:bold; font-size:18px;">${roleText}</span></div>
-                <div style="font-size:13px; color:#999; margin: 0;">词语：${eliminatedPlayer.word}</div>
+                <!-- 【关键修改】：只有游戏结束才显示词语 -->
+                ${isGameEnding ? `<div style="font-size:13px; color:#999; margin: 0;">词语：${eliminatedPlayer.word}</div>` : ''}
             </div>
         `;
+        // --- 【核心修正逻辑结束】 ---
     }
 
-    // 4. 调用通用的 confirm 弹窗 (或者你可以写一个专门的漂亮的 Result Modal)
-    // 这里复用 showConfirm 并把“取消”按钮隐藏，或者使用 alertModal
+    const tempModal = document.createElement('div');
+    tempModal.className = 'modal show';
+    tempModal.style.zIndex = '11000';
     
-    // 为了美观，我们使用 alertModal (提示框)，修改内容后显示
-    const modal = document.getElementById('alertModal');
-    const titleEl = modal.querySelector('.modal-title');
-    const msgEl = document.getElementById('alertMessage');
-    const btn = modal.querySelector('.modal-btn-confirm');
-    
-    titleEl.textContent = resultTitle;
-    msgEl.innerHTML = resultBody;
-    
-    // 【关键】重写按钮点击事件，点击后才执行后续清理和下一轮
-    btn.onclick = () => {
-        closeAlertModal();
+    tempModal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-title" style="font-weight: 800;">${resultTitle}</div>
+            <div style="margin-bottom: 20px; text-align: center;">${resultBody}</div>
+            <div class="modal-buttons">
+                <button id="tempVoteConfirmBtn" class="modal-btn modal-btn-confirm" style="background:#000;">确定</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(tempModal);
+
+    document.getElementById('tempVoteConfirmBtn').onclick = () => {
+        tempModal.remove();
         
-        // --- 真正的结算逻辑移到这里 ---
-        
-        // 1. 清除界面上的红色投票标记
         document.querySelectorAll('.uc-vote-marks-container').forEach(el => el.remove());
         document.querySelectorAll('.uc-player-card').forEach(c => c.classList.remove('vote-target'));
 
-        // 2. 处理淘汰
         if (!isDraw && eliminatedPlayer) {
             eliminatedPlayer.isDead = true;
             const avatarEl = document.querySelector(`#uc-player-${candidates[0]} .uc-avatar`);
             if(avatarEl) avatarEl.classList.add('dead');
             
-            // 同步结果到信息区 (日志)
-            const roleText = eliminatedPlayer.role === 'spy' ? '卧底' : '平民';
-            addUcLog('系统', `${eliminatedPlayer.name} 出局！身份：${roleText}`, 'sys');
+            addUcLog('系统', `${eliminatedPlayer.name} 出局！身份：${eliminatedPlayer.role === 'spy' ? '卧底' : '平民'}`, 'sys');
             
-            // 检查游戏是否结束
             checkGameEnd();
         } else {
-            // 平票日志
             if (candidates.length > 1) addUcLog('系统', `平票，无人出局。`, 'sys');
-            // 继续下一轮
             setTimeout(nextRound, 500);
         }
     };
-    
-    modal.classList.add('show');
 }
 
 // 检查游戏是否结束
@@ -63652,35 +64490,355 @@ function nextRound() {
     startDescriptionPhase();
 }
 
-// 游戏结束弹窗
+// ===============================================================
+// START: 谁是卧底 - 内心独白复盘功能
+// ===============================================================
+
+/**
+ * [替换旧函数] 游戏结束弹窗 (增加了“查看内心”按钮)
+ */
 function showGameOverModal(civilianWin) {
     const resultText = civilianWin ? "平民胜利！" : "卧底胜利！";
     const resultColor = civilianWin ? "#07c160" : "#ff3b30";
     
+    // 创建全屏遮罩
     const modal = document.createElement('div');
+    modal.id = 'ucGameOverModal'; // 给个ID方便查找
     modal.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadeIn 0.5s;";
     
+    // 构建 HTML
     modal.innerHTML = `
         <h1 style="color:${resultColor};font-size:40px;margin-bottom:20px;text-shadow:0 2px 10px rgba(0,0,0,0.5);">${resultText}</h1>
+        
         <div style="color:#fff;margin-bottom:40px;text-align:center;line-height:1.8;font-size:18px;">
             <div>平民词: <strong>${ucState.civilianWord}</strong></div>
             <div>卧底词: <strong style="color:#ff3b30;">${ucState.spyWord}</strong></div>
         </div>
-        <button id="ucGameOverBtn" style="padding:12px 40px;background:#fff;border:none;border-radius:25px;font-weight:bold;font-size:16px;cursor:pointer;box-shadow:0 4px 15px rgba(255,255,255,0.2);">退出游戏</button>
+
+        <div style="display:flex; flex-direction:column; gap:15px; width:80%; max-width:300px;">
+            <!-- 新增：查看内心按钮 -->
+            <button id="ucViewThoughtsBtn" style="padding:14px; background:#64a1ff; color:white; border:none; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 4px 15px rgba(100,161,255,0.4); display:flex; align-items:center; justify-content:center; gap:8px;">
+                <i class="ri-mind-map"></i> 查看本局角色内心
+            </button>
+            
+            <!-- 退出按钮 -->
+            <button id="ucGameOverBtn" style="padding:14px; background:#fff; color:#333; border:none; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 4px 15px rgba(255,255,255,0.2);">
+                退出游戏
+            </button>
+        </div>
     `;
     
     document.body.appendChild(modal);
     
+    // 绑定事件
     document.getElementById('ucGameOverBtn').onclick = () => {
         modal.remove();
         quitUndercoverGame();
     };
+
+    // 绑定新按钮事件
+    document.getElementById('ucViewThoughtsBtn').onclick = () => {
+        // 不关闭 Modal，只是隐藏它，或者直接跳转，这里选择直接跳转
+        // 如果想保留Modal回来时还在，可以只是 modal.style.display='none'
+        // 但通常复盘完就直接退出了，所以我们这里可以移除 Modal
+        modal.remove();
+        openUcInnerThoughts();
+    };
 }
 
-// 退出游戏
-function quitUndercoverGame() {
-    setActivePage('gamesApp');
+/**
+ * [V4 沉浸式复盘] 打开内心独白页 (逐条反应 + 赛后采访)
+ */
+async function openUcInnerThoughts() {
+    setActivePage('ucInnerThoughtsScreen');
+    
+    const container = document.getElementById('ucThoughtsContainer');
+    // 1. 显示加载动画
+    container.innerHTML = `
+        <div style="text-align: center; padding: 60px 20px; color: #666;">
+            <div class="loading-spinner" style="width: 40px; height: 40px; border: 4px solid #e6eff5; border-top-color: #1890ff; margin: 0 auto 20px;"></div>
+            <p style="font-size: 16px; font-weight: bold; color: #333;">正在读取脑电波...</p>
+            <p style="font-size: 12px; margin-top: 5px;">AI 正在回放对局并生成内心弹幕</p>
+        </div>
+    `;
+
+    const settings = await getGameEffectiveSettings();
+    if (!settings || !settings.apiUrl) {
+        container.innerHTML = '<div style="text-align:center; padding:50px;">API未配置</div>';
+        return;
+    }
+
+    // 2. 筛选出本局的好友玩家 (排除用户自己和路人NPC)
+    const aiFriends = ucState.players.filter(p => p.isAiFriend);
+
+    if (aiFriends.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:50px; color:#999;">本局没有好友参与，无法生成内心独白。</div>';
+        return;
+    }
+
+    // 3. 【核心步骤】解析游戏日志，变成结构化数据
+    // 我们需要把 DOM 里的日志转成文字列表，发给 AI
+    const gameLogLines = getStructuredGameLog();
+
+    container.innerHTML = ''; // 清空加载提示，准备逐个渲染
+
+    // 4. 为每个好友分别生成报告 (串行执行，避免并发过高炸API)
+    for (const player of aiFriends) {
+        // 先渲染一个占位卡片
+        const cardId = `replay-card-${player.id}`;
+        const placeholderHTML = `
+            <div class="uc-replay-card" id="${cardId}">
+                <div class="uc-replay-header">
+                    <div class="uc-replay-avatar" style="background-image: url('${player.avatar}')"></div>
+                    <div class="uc-replay-role-info">
+                        <div class="uc-replay-name">${player.name}</div>
+                        <div style="font-size:12px; color:#999;">正在生成内心戏...</div>
+                    </div>
+                </div>
+                <div style="padding:40px; text-align:center;"><div class="loading-spinner" style="width:20px;height:20px;border-width:2px;"></div></div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', placeholderHTML);
+
+        try {
+            // 调用 AI 生成
+            const replayData = await generateSinglePlayerReplay(player, gameLogLines, settings);
+            // 渲染真实内容替换占位符
+            renderSingleReplayCard(cardId, player, replayData);
+        } catch (e) {
+            console.error(e);
+            document.getElementById(cardId).innerHTML = `<div style="padding:20px; text-align:center; color:red;">生成失败: ${e.message}</div>`;
+        }
+    }
 }
+
+/**
+ * [辅助] 从 DOM 中提取结构化的游戏日志
+ */
+function getStructuredGameLog() {
+    const logContainer = document.getElementById('ucChatLog');
+    const items = Array.from(logContainer.querySelectorAll('.uc-log-item'));
+    
+    return items.map((item, index) => {
+        // 提取纯文本，去除多余空格
+        let text = item.innerText.replace(/\n/g, ' ').trim();
+        // 标记这是第几条事件
+        return `【事件${index+1}】: ${text}`;
+    }).join('\n');
+}
+
+/**
+ * [核心AI] 为单个角色生成复盘数据
+ */
+async function generateSinglePlayerReplay(player, gameLogText, settings) {
+    // 1. 获取人设与关系
+    const friendData = player.friendData; 
+    const personaId = friendData.activeUserPersonaId || 'default_user';
+    const userPersona = userPersonas.find(p => p.id === personaId) || userProfile;
+
+    // 2. 获取最近聊天记录 (用于防认错人)
+    const recentChat = (chatHistories[player.id] || []).slice(-20).map(m => 
+        `${m.type === 'sent' ? userPersona.name : player.name}: ${m.content.substring(0, 30)}`
+    ).join('\n');
+
+    // 3. 识别用户在游戏里的代号
+    const userPlayer = ucState.players.find(p => p.isUser);
+    const userGameName = `${ucState.players.indexOf(userPlayer) + 1}号(${userProfile.name})`;
+
+    const prompt = `
+【任务】: 你是 "${player.name}"。你刚刚结束了一局“谁是卧底”游戏。
+你需要**回看**整局游戏的记录，并为你看到的**每一个关键事件**配上一句当时的**内心独白（弹幕）**。最后接受赛后采访。
+
+【你的档案】
+- 身份: ${player.name}
+- 游戏角色: ${player.role === 'spy' ? '卧底 (且拿到了卧底词)' : '平民'}
+- 你的手牌词语: ${player.word}
+- 核心人设: ${friendData.role}
+- **重要提示**: 游戏记录里的 "${userGameName}" 就是你熟悉的好友 "${userPersona.name}"。
+
+【你们的私聊关系 (参考语气)】:
+${recentChat || '无'}
+
+【整局游戏记录 (按时间顺序)】:
+${gameLogText}
+
+【生成要求 (必须严格遵守)】:
+1.  **【全程反应】**: 请挑选游戏记录中 **6到10个** 关键节点（例如：听到别人的描述、自己发言时、投票时、有人出局时、游戏结束时），生成你当时的内心想法。
+2.  **【人设一致】**: 
+    - 如果你是**卧底**：心理活动应包含心虚、伪装、分析局势、或者“哈哈骗过他们了”的得意。
+    - 如果你是**平民**：心理活动应包含困惑、推理、怀疑某人、或者“完了我被冤枉了”的焦急。
+    - 语气必须符合你的性格（傲娇/腹黑/呆萌等）。
+3.  **【识别用户】**: 当事件涉及 "${userGameName}" 时，你的心理活动要体现出你们是熟人。例如：“${userPersona.name}这家伙在胡说什么呢”、“果然还是你懂我”。
+
+【输出格式铁律】:
+返回一个纯净的 JSON 对象，包含两个字段：
+1.  \`timeline\`: 数组。每个对象包含 \`event\` (原文事件) 和 \`thought\` (你的内心独白)。
+2.  \`interview\`: 字符串。赛后采访，总结这局的感受。
+
+【JSON示例】:
+{
+  "timeline": [
+    { "event": "【事件2】: 1号(我) 说: 是圆的", "thought": "嗯？圆的？我的词是方的啊...难道他是卧底？还是我想多了？" },
+    { "event": "【事件5】: 3号 投给了 你", "thought": "喂！3号你干嘛投我！${userPersona.name}你居然不帮我说话！气死我了！" }
+  ],
+  "interview": "这局太惊险了！我全程都在装傻，还好最后赢了。下次我一定要当平民，当卧底心跳太快了！"
+}
+`;
+
+    const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 1.0 })
+    });
+    
+    const data = await response.json();
+    const jsonMatch = data.choices[0].message.content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("解析失败");
+    
+    return JSON.parse(jsonMatch[0]);
+}
+
+/**
+ * [渲染] 将单个角色的复盘数据渲染进卡片
+ */
+function renderSingleReplayCard(cardId, player, data) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    const roleClass = player.role === 'spy' ? 'spy' : 'civilian';
+    const roleText = player.role === 'spy' ? '卧底' : '平民';
+
+    let timelineHtml = data.timeline.map(item => `
+        <div class="uc-timeline-item">
+            <div class="uc-timeline-dot"></div>
+            <div class="uc-event-box">
+                <span class="uc-event-tag">场景:</span> ${item.event.replace(/^【事件\d+】:\s*/, '')}
+            </div>
+            <div class="uc-thought-bubble">
+                ${item.thought}
+            </div>
+        </div>
+    `).join('');
+
+    card.innerHTML = `
+        <div class="uc-replay-header">
+            <div class="uc-replay-avatar" style="background-image: url('${player.avatar}')"></div>
+            <div class="uc-replay-role-info">
+                <div style="display:flex; align-items:center;">
+                    <span class="uc-replay-name">${player.name}</span>
+                    <span class="uc-replay-identity ${roleClass}">${roleText}</span>
+                </div>
+                <div style="font-size:12px; color:#999; margin-top:4px;">持词: <strong>${player.word}</strong></div>
+            </div>
+        </div>
+        
+        <div class="uc-timeline">
+            ${timelineHtml}
+        </div>
+        
+        <div class="uc-interview-section">
+            <div class="uc-interview-title">局后</div>
+            <div class="uc-interview-content">
+                “${data.interview}”
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * [渲染函数] 将内心独白数据渲染成卡片
+ */
+function renderUcThoughts(dataArray) {
+    const container = document.getElementById('ucThoughtsContainer');
+    container.innerHTML = '';
+
+    // 顶部加个大标题
+    container.innerHTML += `
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:24px; font-weight:800; color:#333;">🕵️‍♂️ 赛后采访间</div>
+            <div style="font-size:12px; color:#999; margin-top:5px;">看看TA们刚才都在想什么</div>
+        </div>
+    `;
+
+    dataArray.forEach((item, index) => {
+        // 找到对应的玩家数据以获取头像
+        const player = ucState.players.find(p => p.name === item.name);
+        if (!player) return;
+
+        // 样式处理
+        const roleTagClass = player.role === 'spy' ? 'spy' : 'civilian';
+        const roleTagName = player.role === 'spy' ? '卧底' : '平民';
+        
+        // 头像处理
+        let avatarHtml = '';
+        if (player.isImage) {
+            avatarHtml = `<div class="uc-thought-avatar" style="background-image: url('${player.avatar}')"></div>`;
+        } else {
+            avatarHtml = `<div class="uc-thought-avatar" style="background-color: #333; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">${player.avatar}</div>`;
+        }
+
+        // 延迟动画
+        const delay = index * 0.1; 
+        
+        const card = document.createElement('div');
+        card.className = 'uc-thought-card';
+        card.style.animationDelay = `${delay}s`;
+        
+        // 自动替换文本中的引用部分为高亮样式 (如果AI没有按格式返回HTML标签)
+        let content = item.thought;
+        // 简单的正则，把 "当...时" 或者 "听到..." 稍微高亮一下（可选优化）
+        
+        card.innerHTML = `
+            <div class="uc-thought-header">
+                ${avatarHtml}
+                <div class="uc-thought-info">
+                    <div class="uc-thought-name">${item.name}</div>
+                    <span class="uc-role-tag ${roleTagClass}">${roleTagName} (词: ${player.word})</span>
+                </div>
+            </div>
+            <div class="uc-thought-content">
+                ${content}
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+
+    // 底部添加返回按钮
+    container.innerHTML += `
+        <div style="margin-top: 30px; text-align: center; padding-bottom: 30px;">
+            <button onclick="backToUcGameResult()" style="background: transparent; color: #999; border: 1px solid #ddd; padding: 8px 20px; border-radius: 20px; font-size: 14px; cursor: pointer;">返回结算页</button>
+        </div>
+    `;
+}
+
+/**
+ * [修复] 从内心独白页返回
+ */
+function backToUcGameResult() {
+    // 直接调用退出游戏逻辑，返回游戏中心
+    quitUndercoverGame();
+}
+
+/**
+ * [确保存在] 退出游戏并返回游戏中心
+ */
+function quitUndercoverGame() {
+    // 1. 清理可能存在的弹窗
+    const gameOverModal = document.getElementById('ucGameOverModal');
+    if (gameOverModal) gameOverModal.remove();
+
+    // 2. 跳转回游戏中心
+    setActivePage('gamesApp');
+    
+    // 3. 强制隐藏悬浮球 (防止状态更新滞后)
+    // 注意：setActivePage 内部也会调用 updateGameFloatBallVisibility，这里是双重保险
+    updateGameFloatBallVisibility(); 
+}
+
+// ===============================================================
+// END: 谁是卧底 - 内心独白复盘功能
+// ===============================================================
 
 // --- 辅助函数 ---
 
@@ -63780,58 +64938,114 @@ async function startReasoningPhase() {
 }
 
 /**
- * [升级版] AI 推理/辩论核心逻辑
- * 读取全局日志（谁投过谁、谁出局了），进行有理有据的分析。
+ * [V4 智能博弈版] AI 推理/辩论核心逻辑
+ * 修复：卧底会根据场上局势判断自己是否暴露，并进行伪装或反咬
  */
 async function aiUcReasoning(player) {
-    const settings = await dbManager.get('apiSettings', 'settings');
+const settings = await getGameEffectiveSettings();
     if (!settings.apiUrl) {
         handleAiSpeakResult(player, "我觉得大家说得都挺有道理的。");
         return;
     }
 
-    // 1. 获取本轮描述
-    const currentRoundDescriptions = ucState.players
-        .filter(p => !p.isDead && p.description) 
-        .map(p => `[${ucState.players.indexOf(p) + 1}号] ${p.name}: "${p.description}"`)
+    // 1. 获取本轮（及上一轮）所有人的描述，这是判断局势的关键
+    // 我们提取出“别人”的描述，方便AI做对比
+    const otherPlayersDescriptions = ucState.players
+        .filter(p => !p.isDead && p.id !== player.id && p.description) 
+        .map(p => `[${ucState.players.indexOf(p) + 1}号 ${p.name}]: "${p.description}"`)
         .join('\n');
 
-    // 2. 获取全局日志 (包含之前的投票记录、出局记录)
+    // 2. 获取全局战况
     const fullGameLog = getFullGameLogContext();
 
-    // 3. 确定人设
-    const persona = player.isAiFriend ? player.friendData.role : player.roleDesc;
+    // --- 1. 获取关系与记忆上下文 (推理阶段：熟人模式) ---
+    const userIdx = ucState.players.findIndex(p => p.isUser);
+    const userSeatNum = userIdx + 1;
+
+    let relationshipContext = ""; // 注意：这里变量名要和下面Prompt里用的一致
+
+    if (player.isAiFriend) {
+        const personaId = player.friendData.activeUserPersonaId || 'default_user';
+        const persona = userPersonas.find(p => p.id === personaId) || userProfile;
+
+        // 获取聊天记录（仅用于把握说话语气，不是为了叙旧）
+        const history = (chatHistories[player.id] || []).slice(-10).map(m => 
+            `${m.type === 'sent' ? persona.name : player.name}: ${m.content}`
+        ).join(' | ');
+
+        relationshipContext = `
+        【社交状态：逻辑博弈】
+        - **${userSeatNum}号玩家** 是你的好友 "${persona.name}"。
+        - **指令**：在推理分析时，你可以流露出**一点点**熟人的感觉。
+        - **熟人表现示例**：
+          1. **调侃**：“${userSeatNum}号你这描述也太水了吧，不会是卧底心虚吧？”
+          2. **语气**：使用你们平时聊天(${history})的口吻，但内容必须聚焦于游戏逻辑。
+          注意这只是示例！！不要照搬！！
+        `;
+    } else {
+        relationshipContext = `【身份】你是路人玩家，性格：${player.roleDesc || "普通"}。对${userSeatNum}号(用户)公事公办，只看逻辑。`;
+    }
+
+    // 4. 构建【高阶博弈策略】(这是让卧底变聪明的核心)
+    let strategy = "";
+    
+    if (player.role === 'spy') {
+        strategy = `
+        【【【你的真实身份：卧底】】】 (你的词是：${player.word})
+        
+        **【最高生存铁律：危机感知与伪装】**
+        请立刻对比【大家的描述】和【你的词】：
+        1.  **如果大家的描述跟你的词特征一致**：说明你还没暴露，或者还没轮到你暴露。保持低调，假装分析别人。
+        2.  **【关键】如果大家的描述跟你的词完全不同**（例如你的词是“苹果”，大家都在说“长在土里”）：
+            -   **警报！你绝对是卧底！**
+            -   **行动**：立刻**放弃**维护你手里的词！**开始撒谎！**
+            -   **话术**：顺着大家的逻辑去踩一个看起来像好人的倒霉蛋，或者说“我觉得某人描述太模糊了”，以此转移视线。
+            -   **严禁**：绝对不要再说出你手里那个词的特征了！那样等于自爆！
+        `;
+    } else {
+        strategy = `
+        【你的真实身份：平民】 (你的词是：${player.word})
+        
+        **【胜利法则：寻找异类】**
+        1.  仔细听【大家的描述】，谁的描述跟你的词【${player.word}】有微妙的差别？
+        2.  如果有人描述得很模糊（万金油），攻击他！
+        3.  如果有人上一轮投了你，反击他！
+        4.  不要盲目跟风，要有自己的判断。
+        `;
+    }
 
     const prompt = `
-【游戏】: 谁是卧底。
-【你的身份】: ${player.name} (${ucState.players.indexOf(player) + 1}号)。
-【你的词语】: 【 ${player.word} 】
-【你的身份】: ${player.role === 'spy' ? '卧底' : '平民'}。
-【核心人设】: ${persona}。
+【游戏】: 谁是卧底
+【当前阶段】: **推理/辩论环节** (自由发言，攻击嫌疑人，为自己辩解)
+【你的名字】: ${player.name} (${ucState.players.indexOf(player) + 1}号)。
 
-【【【全局战况 (谁投过谁、谁死了)】】】
+【场上局势】
 ${fullGameLog}
 
-【【【本轮大家说的话】】】
-${currentRoundDescriptions}
+【大家的描述 (情报来源)】
+${otherPlayersDescriptions}
 
-【任务】: 请进行推理发言。
-1.  **结合历史**: 看看【全局战况】。如果上一轮有人投过你，你现在要反击！如果有人出局了是平民，你要分析是谁害死了他。
-2.  **分析本轮**: 看看【本轮大家说的话】，谁的描述和你的词【${player.word}】不一样？
-3.  **如果这轮是第一轮**: 主要针对描述进行分析。
-4.  **如果不是第一轮**: 必须结合之前的投票行为来踩人（例如：“3号上一轮带票投死了好人，他肯定是卧底！”）。
+【你的思考逻辑】
+${relationshipContext}
 
-【输出要求】:
-- 口语化，像在群里吵架。
-- 30字以内。
-- 只返回内容。
-`;
+${strategy}
+
+【【【去“人机感”口语铁律 (绝对执行)】】】
+1. **禁止废话**：严禁以“嗯…”、“呃…”、“怎么说呢”、“好像是”这种犹豫的词开头！直接切入重点。
+2. **拒绝复读**：不要说“我的词是…”。
+
+【任务】: 请根据场上情况，发表一句推理或观点。
+- **口语化**：像在群里吵架或讨论，可以使用“我觉得”、“笑死”、“肯定是”等词。
+- **不要直接说出你的词**：只聊逻辑，只聊别人的描述漏洞。
+- **字数**：30字以内。
+
+请发言：`;
 
     try {
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.9 })
+            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 1.0 }) // 推理环节温度高一点，增加攻击性
         });
         
         const data = await response.json();
@@ -63839,8 +65053,17 @@ ${currentRoundDescriptions}
         
         handleAiSpeakResult(player, content);
         
+    
+
     } catch (e) {
-        handleAiSpeakResult(player, "我感觉大家都没问题啊...");
+        console.error("AI推理失败", e);
+
+        // 【修改点】调用错误重试处理函数
+        await handleGameApiError(
+            e,
+            () => aiUcReasoning(player), // 重试逻辑：重新调用自己
+            () => handleAiSpeakResult(player, "（网络波动）这局势有点看不懂了...") // 兜底逻辑
+        );
     }
 }
 
@@ -63879,6 +65102,494 @@ function handleUserAbstain() {
     
     // 检查是否结算
     checkVotingComplete();
+}
+
+/**
+ * [V2 暂停等待版] 游戏专用错误处理函数
+ * 特性：它会返回一个 Promise，只有用户点击按钮后才会 resolve，从而暂停游戏流程
+ */
+function handleGameApiError(error, retryFn, fallbackFn) {
+    return new Promise((resolve) => {
+        const errorMsg = `API 请求失败！\n\n【详细报错】:\n${error.message}\n\n点击“重回”将重新发起请求；\n点击“跳过”将使用默认回复继续游戏。`;
+        
+        // 1. 修改按钮文字
+        const confirmBtn = document.getElementById('confirmOkBtn');
+        const cancelBtn = document.getElementById('confirmCancelBtn');
+        const originalConfirmText = confirmBtn.textContent;
+        const originalCancelText = cancelBtn.textContent;
+        
+        confirmBtn.textContent = "重回 (Retry)";
+        cancelBtn.textContent = "跳过 (Skip)";
+        confirmBtn.style.backgroundColor = "#07c160"; 
+
+        // 2. 调用通用确认弹窗
+        showConfirm(errorMsg, async (isRetry) => {
+            // 3. 恢复按钮文字和样式
+            confirmBtn.textContent = originalConfirmText;
+            cancelBtn.textContent = originalCancelText;
+            confirmBtn.style.backgroundColor = ""; 
+
+            if (isRetry) {
+                // 用户点击重回 -> 等待重试函数执行完毕
+                showToast("正在重新请求...");
+                try {
+                    await retryFn(); 
+                } catch (e) {
+                    console.error("重试依然失败", e);
+                }
+                resolve(); // 解除暂停
+            } else {
+                // 用户点击跳过 -> 执行兜底
+                if (fallbackFn) fallbackFn();
+                resolve(); // 解除暂停
+            }
+        });
+    });
+}
+
+/**
+ * [辅助函数] 执行具体的投票动作 (增加票数、更新UI、写日志)
+ */
+function performVoteAction(aiPlayer, targetIndex) {
+    // 1. 找到投票者和被投票者
+    const aiRealIndex = ucState.players.findIndex(p => p.id === aiPlayer.id);
+    const targetName = ucState.players[targetIndex].name;
+
+    // 2. 增加票数
+    ucState.players[targetIndex].voteCount++;
+
+    // 3. 界面显示红色标记
+    showUcVotingMark(aiRealIndex, targetIndex);
+
+    // 4. 写入底部日志
+    addUcLog(`${aiRealIndex + 1}号(${aiPlayer.name})`, `投给了 ${targetIndex + 1}号(${targetName})`, 'normal');
+}
+
+// --- 游戏API设置相关函数 ---
+
+function openGameApiSettings() {
+    // 填充当前值
+    document.getElementById('gameApiUrl').value = gameApiSettings.apiUrl || '';
+    document.getElementById('gameApiKey').value = gameApiSettings.apiKey || '';
+    document.getElementById('gameModelName').value = gameApiSettings.modelName || '';
+    document.getElementById('gameFloatBallToggle').checked = isGameFloatBallEnabled;
+    
+    document.getElementById('gameApiSettingsModal').classList.add('show');
+}
+
+async function saveGameApiSettings() {
+    gameApiSettings.apiUrl = document.getElementById('gameApiUrl').value.trim();
+    gameApiSettings.apiKey = document.getElementById('gameApiKey').value.trim();
+    gameApiSettings.modelName = document.getElementById('gameModelName').value.trim();
+    gameApiSettings.floatBallEnabled = isGameFloatBallEnabled;
+    gameApiSettings.id = 'settings'; // 必须有ID
+
+    // 需要在 dbManager.stores 里加上 'gameApiSettings' 这个表名！
+    // 同时也需要你去 dbManager.init() 里加上创建这个表的逻辑，或者直接复用 appSettings 表存不同ID。
+    // 为了简单，建议直接用 dbManager.set('appSettings', {id: 'gameSettings', ...gameApiSettings}) 另存一条。
+    // 这里我们用专门的表更清晰：请记得去 dbManager 的 stores 数组里加 'gameApiSettings'。
+    
+    await dbManager.set('gameApiSettings', gameApiSettings);
+    
+    document.getElementById('gameApiSettingsModal').classList.remove('show');
+    updateGameFloatBallVisibility(); // 立即刷新悬浮球状态
+    showToast("游戏配置已更新");
+}
+
+function toggleGameFloatBall() {
+    isGameFloatBallEnabled = document.getElementById('gameFloatBallToggle').checked;
+}
+
+// [修正版] 检查当前页面是否应该显示悬浮球
+function updateGameFloatBallVisibility() {
+    // 获取当前激活的页面ID
+    const activePage = document.querySelector('.page.active');
+    const activePageId = activePage ? activePage.id : '';
+    
+    // 定义哪些页面是游戏页面 (在这里加入了 'ucInnerThoughtsScreen')
+    const gamePages = ['charadesGameScreen', 'undercoverGameScreen', 'ucInnerThoughtsScreen'];
+    
+    const ball = document.getElementById('gameFloatBall');
+    if (!ball) return;
+
+    if (isGameFloatBallEnabled && gamePages.includes(activePageId)) {
+        ball.style.display = 'flex';
+    } else {
+        ball.style.display = 'none';
+    }
+}
+
+// 获取最终使用的 API 配置 (游戏时调用此函数获取配置)
+async function getGameEffectiveSettings() {
+    const mainSettings = await dbManager.get('apiSettings', 'settings');
+    
+    // 如果游戏配置了，就用游戏的，否则用全局的
+    return {
+        apiUrl: gameApiSettings.apiUrl || mainSettings.apiUrl,
+        apiKey: gameApiSettings.apiKey || mainSettings.apiKey,
+        modelName: gameApiSettings.modelName || mainSettings.modelName
+    };
+}
+
+// --- ▼▼▼ 请用这段新代码，完整替换旧的 openGameApiPresetSelector 函数 ▼▼▼ ---
+
+function openGameApiPresetSelector() {
+    const list = document.getElementById('gameApiPresetListContainer');
+    if (!list) return; // 安全检查
+
+    list.innerHTML = '';
+    
+    // 使用全局的 apiPresets 变量
+    if (apiPresets.length === 0) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:#999">暂无预设</div>';
+    } else {
+        apiPresets.forEach(preset => {
+            const item = document.createElement('div');
+            item.className = 'friend-item'; // 复用通用列表样式
+            
+            // 【核心修改】加入了右侧的删除按钮 span
+            item.innerHTML = `
+                <div class="friend-info" onclick="applyGamePreset('${preset.id}')" style="flex:1; cursor:pointer;">
+                    <div class="friend-name">${preset.name}</div>
+                </div>
+                <span class="delete-btn" title="删除预设" style="font-size: 20px; padding: 5px 10px; cursor: pointer;" onclick="deleteGameApiPreset(event, '${preset.id}')">
+                    ✕
+                </span>
+            `;
+            list.appendChild(item);
+        });
+    }
+    document.getElementById('gameApiPresetSelectModal').classList.add('show');
+}
+
+// --- ▲▲▲ 替换结束 ▲▲▲ ---
+
+
+// --- ▼▼▼ 请将这个【全新】的删除函数粘贴到脚本末尾 ▼▼▼ ---
+
+/**
+ * 删除游戏API预设
+ * @param {Event} event - 点击事件
+ * @param {string} presetId - 预设ID
+ */
+async function deleteGameApiPreset(event, presetId) {
+    event.stopPropagation(); // 阻止冒泡，防止触发“选择”事件
+
+    const preset = apiPresets.find(p => p.id === presetId);
+    if (!preset) return;
+
+    showConfirm(`确定要删除预设“${preset.name}”吗？`, async (confirmed) => {
+        if (!confirmed) return;
+
+        // 1. 从数据库删除
+        await dbManager.delete('apiPresets', presetId);
+
+        // 2. 从内存数组中移除
+        apiPresets = apiPresets.filter(p => p.id !== presetId);
+
+        // 3. 重新渲染当前列表（不需要关闭弹窗）
+        openGameApiPresetSelector(); 
+        
+        showAlert('预设已删除。');
+    });
+}
+// --- ▲▲▲ 新增结束 ▲▲▲ ---
+
+function applyGamePreset(id) {
+    const preset = apiPresets.find(p => p.id === id);
+    if (preset) {
+        document.getElementById('gameApiUrl').value = preset.apiUrl;
+        document.getElementById('gameApiKey').value = preset.apiKey;
+        // 如果预设里没有模型名，保持原样或清空，看你需求
+    }
+    document.getElementById('gameApiPresetSelectModal').classList.remove('show');
+}
+
+async function saveGameApiPreset() {
+    // 复用全局的 saveApiPreset 逻辑，但要从游戏弹窗的输入框取值
+    const url = document.getElementById('gameApiUrl').value;
+    const key = document.getElementById('gameApiKey').value;
+    
+    if(!url || !key) return showToast("内容为空，无法保存");
+    
+    openNameInputModal('输入预设名称', async (name) => {
+        if(!name) return;
+        const newPreset = { id: Date.now().toString(), name, apiUrl: url, apiKey: key };
+        apiPresets.push(newPreset);
+        await dbManager.set('apiPresets', newPreset);
+        showToast("预设已保存 (通用)");
+    });
+}
+
+// --- 游戏中心 API 设置专用函数 ---
+
+// 1. 切换游戏模型下拉菜单
+function toggleGameModelDropdown() {
+    document.getElementById('gameModelDropdown').classList.toggle('show');
+}
+
+// 2. 选中游戏模型
+function selectGameModel(modelName) {
+    document.getElementById('gameModelName').value = modelName;
+    toggleGameModelDropdown();
+}
+
+// 3. 游戏专用：拉取模型列表
+async function fetchGameModels() {
+    // 优先读取输入框里的值
+    let apiUrl = document.getElementById('gameApiUrl').value.trim();
+    let apiKey = document.getElementById('gameApiKey').value.trim();
+
+    // 如果输入框为空，则尝试使用全局配置（方便用户只改模型而不改Key）
+    if (!apiUrl || !apiKey) {
+        const globalSettings = await dbManager.get('apiSettings', 'settings');
+        if (globalSettings) {
+            if (!apiUrl) apiUrl = globalSettings.apiUrl;
+            if (!apiKey) apiKey = globalSettings.apiKey;
+        }
+    }
+
+    if (!apiUrl || !apiKey) return showAlert('请先填写API地址和密钥 (或在主设置中配置)');
+
+    const overlay = document.getElementById('loadingOverlay');
+    // 显示加载动画
+    overlay.innerHTML = `<div class="loading-spinner" style="border-top-color: #333;"></div><p>正在拉取模型...</p>`;
+    overlay.style.backgroundColor = 'rgba(248, 248, 248, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '1';
+
+    try {
+        const response = await fetch(`${apiUrl}/models`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        
+        const dropdown = document.getElementById('gameModelDropdown');
+        dropdown.innerHTML = '';
+        
+        // 填充下拉菜单
+        (data.data || []).forEach(model => {
+            const option = document.createElement('div');
+            option.className = 'model-option';
+            option.textContent = model.id;
+            // 点击选项时，填入输入框
+            option.onclick = () => selectGameModel(model.id);
+            dropdown.appendChild(option);
+        });
+        
+        // 自动打开下拉菜单以便选择
+        dropdown.classList.add('show');
+        showToast(`成功拉取到 ${data.data.length} 个模型`);
+
+    } catch (error) {
+        showAlert(`拉取模型失败: ${error.message}`);
+    } finally {
+        // 隐藏加载动画
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 500);
+    }
+}
+
+// 点击其他地方关闭下拉菜单 (复用全局逻辑，但在 openGameApiSettings 里绑定事件可能更安全，或者利用冒泡)
+// 为了简单，在这个函数里处理点击空白关闭
+document.addEventListener('click', (event) => {
+    const dropdown = document.getElementById('gameModelDropdown');
+    const input = document.getElementById('gameModelName');
+    const arrow = input ? input.nextElementSibling : null;
+    
+    if (dropdown && dropdown.classList.contains('show')) {
+        // 如果点击的不是下拉框本身、也不是输入框、也不是箭头
+        if (!dropdown.contains(event.target) && event.target !== input && (!arrow || !arrow.contains(event.target))) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
+
+// 切换拉黑状态
+async function toggleBlockFriend() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    const isBlocked = document.getElementById('blockUserToggle').checked;
+    friend.isBlocked = isBlocked;
+
+    // 系统提示
+    const tipText = isBlocked ? "你已将对方加入黑名单" : "你已把对方放出黑名单";
+    await addSystemMessage(tipText);
+
+    await saveData();
+    showToast(isBlocked ? "已拉黑" : "已解除拉黑");
+    updateBlockedInputUI(); 
+}
+
+// 修改 openChatSettings 函数，确保进入设置时开关状态正确
+function openChatSettings() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if(friend) {
+        document.getElementById('pinChatText').textContent = friend.pinned ? '取消置顶' : '置顶聊天';
+        // 核心：回显拉黑状态
+        document.getElementById('blockUserToggle').checked = !!friend.isBlocked;
+    }
+    setActivePage('chatSettingsScreen');
+}
+
+// --- 线下模式/拉黑功能 辅助函数 ---
+
+// 触发申请
+async function triggerUnblockRequest(friend) {
+    const settings = await dbManager.get('apiSettings', 'settings') || {};
+    if (!settings.apiKey) return;
+
+    console.log(`[拉黑系统] ${friend.name} 正在尝试发起解除拉黑申请...`);
+
+    const prompt = `你现在是被用户拉黑的状态。你叫"${friend.name}"，性格是"${friend.role}"。
+    请写一段话向用户诚恳地申请解除拉黑。你可以道歉、撒娇、解释或者反思。
+    要求：语气符合人设，字数在50字以内。只需回复留言内容本身，不要带引号。`;
+
+    try {
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+        const data = await response.json();
+        const reason = data.choices[0].message.content.trim();
+
+        // 存储申请到内存
+        friend.pendingUnblockReason = reason;
+        
+        // 关键：将申请以系统消息形式存入历史，这样AI能记住自己求过情
+        await saveChatMessage(friend.id, 'system', `[系统通知]: ${friend.name} 发来了解除拉黑申请`, '', null, 'system_tip');
+        await saveData();
+
+        // 如果用户正好在和这个人聊天，立即弹出
+        if (currentChatFriendId === friend.id) {
+            showUnblockRequestPopup(friend, reason);
+        } else {
+            // 否则发送一个顶部通知
+            showNotification(friend, "发来了解除拉黑申请");
+        }
+    } catch (e) { console.error("生成申请失败", e); }
+}
+
+// 显示申请弹窗
+function showUnblockRequestPopup(friend, reason) {
+    // 确保弹窗元素存在
+    const modal = document.getElementById('unblockRequestModal');
+    if(!modal) return;
+
+    document.getElementById('unblockName').textContent = friend.remark || friend.name;
+    document.getElementById('unblockReasonText').textContent = reason;
+    const avatarEl = document.getElementById('unblockAvatar');
+    
+    if (friend.avatarImage) {
+        avatarEl.style.backgroundImage = `url(${friend.avatarImage})`;
+        avatarEl.textContent = '';
+    } else {
+        avatarEl.style.backgroundImage = 'none';
+        avatarEl.textContent = friend.avatar || friend.name[0];
+    }
+
+    modal.classList.add('show');
+}
+
+async function handleUnblockDecision(isAgree) {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    document.getElementById('unblockRequestModal').classList.remove('show');
+
+    if (isAgree) {
+        // 同意
+        friend.isBlocked = false;
+        await addSystemMessage("你已同意对方的解除拉黑申请");
+        await addSystemMessage("你已把对方放出黑名单");
+        showToast("已解除拉黑");
+        updateBlockedInputUI();
+    } else {
+        // 拒绝
+        await addSystemMessage("你已拒绝对方的解除拉黑申请");
+        showToast("已拒绝申请");
+    }
+
+    // 清空申请记录
+    friend.pendingUnblockReason = null;
+    await saveData();
+    refreshChatView(); // 刷新界面移除感叹号
+}
+
+/**
+ * [增强版] 根据拉黑状态更新输入框 UI 及锁定按键
+ */
+function updateBlockedInputUI() {
+    if (!currentChatFriendId) return;
+
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    const blockedBar = document.getElementById('blockedBar');
+    const messageInput = document.getElementById('messageInput');
+    const chatMessages = document.getElementById('chatMessages');
+    const sendBtn = document.getElementById('chatInputSendButton');
+
+    // 所有的功能按键
+    const voiceBtn = document.getElementById('chatInputVoiceButton');
+    const emojiBtn = document.getElementById('chatInputEmojiButton');
+    const plusBtn = document.getElementById('chatInputPlusButton');
+    const receiveBtn = document.getElementById('chatInputReceiveButton');
+
+    if (!friend || !blockedBar || !messageInput || !chatMessages) return;
+
+    if (friend.isBlocked) {
+        // --- 开启拉黑模式 ---
+        blockedBar.style.display = 'block'; 
+        messageInput.disabled = true;
+        messageInput.value = '';
+        messageInput.placeholder = '';
+        
+        // 1. 按钮锁定逻辑
+        // 禁用：语音、表情、加号、发送
+        voiceBtn.classList.add('btn-disabled');
+        emojiBtn.classList.add('btn-disabled');
+        plusBtn.classList.add('btn-disabled');
+        sendBtn.classList.remove('active'); // 发送按钮如果是激活状态则取消
+        
+        // 允许：只有“接收消息”按钮保持可用
+        receiveBtn.classList.remove('btn-disabled');
+
+        // 2. 布局修正逻辑
+        // 默认输入框高度约 65px，拉黑条高度约 40px，所以底部留白增加到 105px
+        chatMessages.style.paddingBottom = '105px';
+        
+        // 强制收起已打开的功能菜单
+        hideFunctionMenus();
+        
+        // 恢复功能键显示（防止发送键卡在那里）
+        const leftButtons = document.getElementById('chatDefaultButtons');
+        const rightButtons = document.getElementById('chatRightButtons');
+        if (leftButtons) { leftButtons.style.transform = ''; leftButtons.style.width = ''; leftButtons.style.opacity = ''; }
+        if (rightButtons) { rightButtons.style.transform = ''; rightButtons.style.width = ''; rightButtons.style.opacity = ''; }
+
+    } else {
+        // --- 解除拉黑模式 ---
+        blockedBar.style.display = 'none';
+        messageInput.disabled = false;
+        messageInput.placeholder = '输入消息...';
+        
+        // 恢复所有按钮点击
+        voiceBtn.classList.remove('btn-disabled');
+        emojiBtn.classList.remove('btn-disabled');
+        plusBtn.classList.remove('btn-disabled');
+        receiveBtn.classList.remove('btn-disabled');
+
+        // 恢复默认底部留白 (65px)
+        chatMessages.style.paddingBottom = '65px';
+    }
+    
+    // 自动滚动到底部，确保看到最新消息
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
     </script>
