@@ -18685,6 +18685,521 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     color: #fff !important;
 }
 
+/* --- 新增：心声历史记录样式 --- */
+
+/* 历史记录卡片 */
+.voice-history-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #f0f0f0;
+    position: relative;
+}
+
+/* 顶部时间 */
+.voice-history-time {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #eee;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* 核心内容区 */
+.voice-history-content {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.6;
+}
+
+.voice-history-item {
+    margin-bottom: 6px;
+    display: flex;
+}
+
+.voice-history-label {
+    color: #999;
+    min-width: 60px; /* 标签宽度固定，对齐好看 */
+    flex-shrink: 0;
+}
+
+.voice-history-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+/* 那个大大的颜文字 */
+.voice-history-emoji {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 24px;
+    opacity: 0.2; /* 淡一点作为背景装饰 */
+    pointer-events: none;
+}
+
+/* 查看历史按钮样式 (放在弹窗里的) */
+.view-history-btn {
+    margin-top: 15px;
+    width: 100%;
+    padding: 10px;
+    background-color: #f0f2f5;
+    color: #666;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.view-history-btn:active {
+    background-color: #e5e5e5;
+}
+
+/* --- [最终合并版] 视频通话专属样式 --- */
+
+/* 1. 视频通话主容器 */
+#videoCallScreen, #incomingVideoCallScreen {
+    background-color: #000 !important;
+    z-index: 2000;
+    color: #fff;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    /* 【布局修复】让头部和底部按钮自动分开，解决按钮跑上面的问题 */
+    justify-content: space-between; 
+    /* 【布局修复】增加内边距，确保内容不贴边 */
+    padding: 60px 0 40px; 
+}
+
+#videoCallScreen.active, #incomingVideoCallScreen.active {
+    display: flex;
+}
+
+/* 2. 全屏对方画面 (背景) */
+.video-full-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    /* 【颜色修复】只保留亮度压暗(让字看清)，删除了 grayscale(黑白滤镜)，恢复彩色 */
+    filter: brightness(0.7); 
+    z-index: 0;
+}
+
+/* 3. 我的画面 (画中画) */
+.video-self-preview {
+    position: absolute;
+    top: 60px; 
+    right: 20px;
+    width: 90px;
+    height: 120px;
+    background-color: #333;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    /* 【颜色修复】删除了滤镜，恢复彩色 */
+    filter: none;
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+/* 4. 顶部信息栏 (通话中) */
+.video-top-bar {
+    position: relative;
+    z-index: 10;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 名字靠左 */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    margin-top: 0;
+}
+
+.video-status-text {
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+    margin-top: 5px;
+    font-family: monospace;
+}
+
+/* 5. 头部信息容器 (来电界面) */
+#incomingVideoCallScreen .voice-call-header {
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 60px;
+}
+
+/* 6. 对话日志区域 (防遮挡 + 渐变) */
+.video-log-container {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    overflow-y: auto;
+    
+    /* 【位置修复】220px = 顶部空隙 + 头像高度 + 缓冲距离 */
+    /* 这会让第一条消息最高只能到达红线下方，绝不会碰到右上角的头像 */
+    padding-top: 220px !important; 
+    
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* 消息从底部开始堆叠 */
+    gap: 15px;
+    
+    /* 顶部渐变遮罩，让滚上去的消息慢慢消失 */
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%);
+}
+
+/* 7. 视频通话气泡 */
+.video-bubble {
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 80%;
+    backdrop-filter: blur(2px);
+    border: 1px solid rgba(255,255,255,0.1);
+    align-self: flex-start;
+}
+
+.video-bubble.user {
+    align-self: flex-end;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255,255,255,0.2);
+}
+
+/* 8. 旁白 (居中) */
+.video-narration {
+    align-self: center;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+    margin: 10px 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    max-width: 90%;
+}
+
+/* 9. 底部操作栏 (通话中) */
+.video-controls {
+    position: relative;
+    z-index: 20;
+    padding: 20px;
+    padding-bottom: 0;
+    display: flex;
+    justify-content: space-around;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}
+
+/* 10. 底部按钮容器 (来电界面) */
+.incoming-call-actions {
+    z-index: 10;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    padding: 0 40px;
+    margin-bottom: 50px;
+}
+
+/* --- 海龟汤游戏专属样式 (清新绿白版 V2) --- */
+
+/* 1. 游戏主界面背景 (纯白/浅灰) */
+#turtleSoupGameScreen {
+    background-color: #f7f9f8 !important; 
+    color: #333;
+}
+
+/* 2. 顶部汤面区域 (清新浅绿卡片 + 固定高度滚动) */
+.soup-header-card {
+    background: #e8f5e9; /* 极浅的薄荷绿背景 */
+    color: #2e7d32;      /* 深绿色文字，保证对比度 */
+    padding: 20px;
+    margin: 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(76, 175, 80, 0.1); /* 淡淡的绿色阴影 */
+    position: relative;
+    z-index: 10;
+    border: 1px solid #c8e6c9;
+}
+
+.soup-tags {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.soup-tag {
+    font-size: 11px;
+    background: #fff;
+    color: #4caf50;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #a5d6a7;
+    font-weight: bold;
+}
+
+/* 【核心修改】限制高度 + 内部滚动 */
+.soup-content {
+    font-size: 15px;
+    line-height: 1.7;
+    font-weight: 500;
+    color: #1b5e20;
+    
+    /* 限制高度，大约显示 4-5 行 */
+    max-height: 120px; 
+    overflow-y: auto;  /* 超出允许滚动 */
+    
+    /* 增加内边距，防止滚动条遮挡文字 */
+    padding-right: 5px;
+}
+
+/* 滚动条美化 */
+.soup-content::-webkit-scrollbar { width: 4px; }
+.soup-content::-webkit-scrollbar-thumb { background: #a5d6a7; border-radius: 4px; }
+
+.soup-host-info {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    font-size: 12px;
+    color: #66bb6a;
+    border-top: 1px dashed #c8e6c9;
+    padding-top: 10px;
+}
+
+.soup-host-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 8px;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* 3. 中间聊天区 */
+.soup-chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 15px 20px;
+}
+
+/* 游戏内的系统消息 */
+.soup-system-msg {
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+    margin: 10px 0;
+    background: #fff;
+    padding: 4px 12px;
+    border-radius: 12px;
+    align-self: center;
+    display: inline-block;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* 4. 底部操作栏 (白底) */
+.soup-bottom-bar {
+    background: #ffffff;
+    padding: 10px 15px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.soup-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #666; /* 默认灰色 */
+    background: none;
+    border: none;
+    font-size: 10px;
+    width: 40px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.soup-action-btn:active { color: #4caf50; }
+
+.soup-action-btn i {
+    font-size: 22px;
+    margin-bottom: 2px;
+}
+
+.soup-input {
+    flex: 1;
+    background: #f5f5f5;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 15px;
+    color: #333;
+    font-size: 15px;
+    outline: none;
+}
+
+.soup-send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #4caf50; /* 按钮保持绿色 */
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+/* 5. 选题列表样式 (图2复刻 - 白底) */
+.soup-select-list {
+    padding: 15px;
+    background: #f7f9f8;
+    min-height: 100%;
+}
+
+.soup-item-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    cursor: pointer;
+}
+
+.soup-item-card:active { background: #fafafa; }
+
+.soup-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.soup-item-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.soup-item-tag {
+    background: #e8f5e9;
+    color: #2e7d32;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.soup-item-preview {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.soup-item-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #999;
+    border-top: 1px solid #f9f9f9;
+    padding-top: 8px;
+}
+
+/* 6. 汤底/线索弹窗 (黑白通用风格) */
+.soup-answer-modal {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 85%;
+    max-width: 320px;
+    background: #fff; /* 白底 */
+    border-radius: 16px;
+    padding: 25px;
+    z-index: 3000;
+    display: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    color: #333;
+}
+.soup-answer-modal.show { display: block; }
+
+.soup-answer-title { 
+    font-size: 18px; 
+    font-weight: 800; 
+    margin-bottom: 15px; 
+    color: #000; 
+    text-align: center; 
+}
+
+.soup-answer-content { 
+    font-size: 15px; 
+    line-height: 1.8; 
+    white-space: pre-wrap; 
+    margin-bottom: 25px; 
+    color: #444;
+}
+
+.soup-clue-item { 
+    background: #f5f5f5; 
+    padding: 12px; 
+    margin-bottom: 10px; 
+    border-radius: 8px; 
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    transition: background 0.2s;
+}
+.soup-clue-item:active { background: #e0e0e0; }
+
+/* 7. 设置弹窗内部样式 (覆盖默认) */
+/* 不需要额外写，直接使用通用 .modal 样式即可实现黑白风格 */
+
+/* 8. 模式选择按钮 (黑白风) */
+.uc-mode-btn {
+    padding: 10px 18px;
+    border: 1px solid #e0e0e0;
+    background: #f9f9f9;
+    color: #666;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+    text-align: center;
+}
+.uc-mode-btn.active {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transform: scale(1.02);
+}
+
     </style>
 </head>
 <body>
@@ -19402,21 +19917,34 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     <button onclick="sendUserCallMessage()"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="18" height="18"><path d="M3.4 20.4l17.4-8.4c.8-.4.8-1.6 0-2L3.4 1.6c-.8-.4-1.6.4-1.4 1.2l3.6 7.2c.2.4.2 1 0 1.4L2 19.2c-.2.8.6 1.6 1.4 1.2z"/></svg></button>
                 </div>
             
-                <div class="voice-call-controls" id="voiceCallControls">
+           <div class="voice-call-controls" id="voiceCallControls">
+                    <!-- 静音按钮 -->
                     <button class="voice-call-btn" onclick="showAlert('功能暂未开放')">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1.2-9.1c0-1.03.83-1.9 1.9-1.9 1.02 0 1.8.84 1.8 1.9l-.01 6.2c0 1.03-.83 1.9-1.9 1.9s-1.8-.84-1.8-1.9L10.8 4.9zM17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>
+                        <div class="voice-call-btn-icon">
+                            <i class="ri-mic-off-line" style="font-size: 30px;"></i>
+                        </div>
                         <span>静音</span>
                     </button>
+                    
+                    <!-- 挂断按钮 (修正后) -->
                     <button class="voice-call-btn hangup" onclick="endVoiceCall()">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.62.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.36 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.7l-2.47 2.47c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></div>
+                        <div class="voice-call-btn-icon">
+                            <!-- 使用 ri-phone-fill 并旋转 135度 来模拟挂断图标 -->
+                            <i class="ri-phone-fill" style="font-size: 30px; display: inline-block; transform: rotate(135deg);"></i>
+                        </div>
                         <span>挂断</span>
                     </button>
+                    
+                    <!-- 免提按钮 -->
                     <button class="voice-call-btn" onclick="showAlert('功能暂未开放')">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M3 4l1.41 1.41L12 12.83l7.59-7.59L21 6.64 12 15.64 3.36 7.05 3 7.41V4h.01M3 14v2h18v-2H3z"/></svg></div>
+                        <div class="voice-call-btn-icon">
+                            <i class="ri-volume-up-line" style="font-size: 30px;"></i>
+                        </div>
                         <span>免提</span>
                     </button>
                 </div>
-            </div>
+                  </div>
+                
 
             <!-- [NEW] Incoming Call Screen -->
             <div id="incomingCallScreen" class="page">
@@ -19426,13 +19954,22 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     <div class="voice-call-name" id="incomingCallName"></div>
                     <div class="voice-call-status">邀请你进行语音通话</div>
                 </div>
-                <div class="incoming-call-actions">
+           <div class="incoming-call-actions">
+                    <!-- 拒绝按钮 (修正后) -->
                     <button class="voice-call-btn hangup" onclick="declineCall()">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.62.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.36 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.7l-2.47 2.47c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></div>
+                        <div class="voice-call-btn-icon">
+                            <!-- 同样使用旋转后的电话图标 -->
+                            <i class="ri-phone-fill" style="font-size: 30px; display: inline-block; transform: rotate(135deg);"></i>
+                        </div>
                         <span>拒绝</span>
                     </button>
+                    
+                    <!-- 接听按钮 (修正后) -->
                     <button class="voice-call-btn accept incoming-call-btn" onclick="acceptCall()">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.66.24-1.01-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.75 0 .99-.65.99-.99v-3.45c0-.54-.45-.98-.99-.98z"/></svg></div>
+                        <div class="voice-call-btn-icon">
+                            <!-- 接听直接使用 ri-phone-fill -->
+                            <i class="ri-phone-fill" style="font-size: 30px;"></i>
+                        </div>
                         <span>接听</span>
                     </button>
                 </div>
@@ -23297,6 +23834,15 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
             <div class="game-card-title">谁是卧底</div>
             <div class="game-card-desc">语言推理，找出异类</div>
         </div>
+        
+<div class="game-card" onclick="openTurtleSoupSetup()">
+    <div class="game-card-icon" style="color:#4caf50;">
+        <i class="fas fa-book-dead"></i>
+    </div>
+    <div class="game-card-title">海龟汤</div>
+    <div class="game-card-desc">情境猜谜，还原真相</div>
+</div>
+
 
         <!-- 占位符 (保留或删除均可) -->
         <!-- 
@@ -25173,6 +25719,293 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
+<!-- 新增：心声历史记录页面 (修正版) -->
+<div id="heartsVoiceHistoryScreen" class="page">
+    <div class="nav-bar">
+        <!-- 返回按钮，返回到聊天界面 -->
+        <button class="nav-btn" onclick="backToChat()"><i class="ri-arrow-left-s-line"></i></button>
+        <div class="nav-title">心声记录簿</div>
+        <div style="width: 40px;"></div>
+    </div>
+    <!-- 【核心修改】这里增加了 padding-top: 84px -->
+    <!-- 解释：74px 是(状态栏30 + 导航栏44)的高度，额外加 10px 是为了美观的间距 -->
+    <div class="wechat-content" style="background-color: #f7f7f7; padding: 20px; padding-top: 84px;">
+        <div id="heartsVoiceHistoryList" style="padding-bottom: 40px;">
+            <!-- JS 将在这里生成历史卡片 -->
+        </div>
+    </div>
+</div>
+
+<!-- 视频通话界面 -->
+<div id="videoCallScreen" class="page">
+    <div id="videoFriendBg" class="video-full-bg"></div>
+    <div id="videoUserPreview" class="video-self-preview"></div>
+    
+    <div class="video-top-bar">
+        <div style="font-size: 20px; font-weight: bold;" id="videoFriendName">Role Name</div>
+        <div class="video-status-text" id="videoDuration">00:00</div>
+    </div>
+
+    <div class="video-log-container" id="videoCallLog"></div>
+
+    <div class="voice-call-input-area" id="videoInputArea" style="position: relative; z-index: 20; margin-bottom: 0; padding: 0 15px;">
+        <input type="text" id="videoUserInput" placeholder="输入对话..." style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+        <button onclick="sendUserVideoMessage()" style="background: rgba(255,255,255,0.2);">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="18" height="18"><path d="M3.4 20.4l17.4-8.4c.8-.4.8-1.6 0-2L3.4 1.6c-.8-.4-1.6.4-1.4 1.2l3.6 7.2c.2.4.2 1 0 1.4L2 19.2c-.2.8.6 1.6 1.4 1.2z"/></svg>
+        </button>
+    </div>
+
+    <div class="video-controls">
+        <button class="voice-call-btn" onclick="showAlert('摄像头已开启')">
+            <div class="voice-call-btn-icon">
+                <i class="ri-camera-switch-line" style="font-size: 30px;"></i>
+            </div>
+            <span>翻转</span>
+        </button>
+        
+        <button class="voice-call-btn hangup" onclick="endVideoCall()">
+            <div class="voice-call-btn-icon">
+                <!-- 【修复】使用旋转的电话图标 -->
+                <i class="ri-phone-fill" style="font-size: 30px; display: inline-block; transform: rotate(135deg);"></i>
+            </div>
+            <span>挂断</span>
+        </button>
+        
+        <button class="voice-call-btn" onclick="showAlert('麦克风已开启')">
+            <div class="voice-call-btn-icon">
+                <i class="ri-mic-off-line" style="font-size: 30px;"></i>
+            </div>
+            <span>静音</span>
+        </button>
+    </div>
+</div>
+
+<!-- 视频通话来电界面 -->
+<div id="incomingVideoCallScreen" class="page">
+    <div id="incomingVideoBg" class="video-full-bg"></div>
+    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1;"></div>
+    
+    <div class="voice-call-header" style="z-index: 10;">
+        <div class="voice-call-avatar" id="incomingVideoAvatar" style="border: 2px solid #fff;"></div>
+        <div class="voice-call-name" id="incomingVideoName"></div>
+        <div class="voice-call-status">邀请你进行视频通话...</div>
+    </div>
+    
+    <div class="incoming-call-actions" style="z-index: 10;">
+        <button class="voice-call-btn hangup" onclick="declineVideoCall()">
+            <div class="voice-call-btn-icon">
+                 <!-- 【修复】使用旋转的电话图标 -->
+                 <i class="ri-phone-fill" style="font-size: 30px; display: inline-block; transform: rotate(135deg);"></i>
+            </div>
+            <span>拒绝</span>
+        </button>
+        <button class="voice-call-btn accept incoming-call-btn" onclick="acceptVideoCall()">
+            <div class="voice-call-btn-icon">
+                <i class="ri-vidicon-fill" style="font-size: 30px;"></i>
+            </div>
+            <span>接听</span>
+        </button>
+    </div>
+</div>
+
+<!-- =============================================================== -->
+<!-- START: 海龟汤 (Turtle Soup) 完整功能模块 (绿白清新版) -->
+<!-- =============================================================== -->
+
+<!-- 1. 海龟汤设置弹窗 (黑白通用风格) -->
+<div id="turtleSoupSetupModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">海龟汤设置</div>
+        
+        <!-- 选择主持人 -->
+        <div class="form-group">
+            <label class="form-label">谁是主持人？</label>
+            <div class="uc-mode-group">
+                <!-- 按钮样式复用谁是卧底的 uc-mode-btn -->
+                <div class="uc-mode-btn active" onclick="selectSoupHost('friend')" id="btnSoupHostFriend">
+                    <div>好友</div>
+                    <div style="font-size:10px;">(我来猜)</div>
+                </div>
+                <div class="uc-mode-btn" onclick="selectSoupHost('user')" id="btnSoupHostUser">
+                    <div>我</div>
+                    <div style="font-size:10px;">(好友猜)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 选择汤源 -->
+        <div class="form-group">
+            <label class="form-label">选择汤底</label>
+            <div class="uc-mode-group">
+                <div class="uc-mode-btn active" onclick="selectSoupSource('random')" id="btnSoupSourceRandom">
+                    <div>随机汤</div>
+                </div>
+                <div class="uc-mode-btn" onclick="selectSoupSource('specific')" id="btnSoupSourceSpecific">
+                    <div>指定汤</div>
+                </div>
+            </div>
+            <div class="form-hint" id="soupSourceHint" style="color:#999; font-size:12px; margin-top:5px;">随机汤：系统随机抽取，充满未知。</div>
+        </div>
+
+        <!-- 选择好友 -->
+        <div class="form-group">
+            <label class="form-label">选择玩伴</label>
+            <!-- 列表容器：去除深色背景，使用通用边框 -->
+            <div id="soupFriendList" class="multi-select-list" style="max-height: 200px; border: 1px solid #eee; border-radius: 8px; background:#fff;">
+                <!-- JS动态生成好友列表 -->
+            </div>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('turtleSoupSetupModal').classList.remove('show')">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="startTurtleSoupSetup()" style="background:#4caf50; color:#fff;">开始</button>
+        </div>
+    </div>
+</div>
+
+<!-- 2. 指定汤选择页面 (白底列表) -->
+<div id="turtleSoupSelectScreen" class="page">
+    <div class="nav-bar" style="background:#ffffff; border-bottom:1px solid #f0f0f0;">
+        <button class="nav-btn" onclick="backToSoupSetup()"><i class="ri-arrow-left-s-line" style="color:#000;"></i></button>
+        <div class="nav-title" style="color:#000;">选择汤底</div>
+        <div></div>
+    </div>
+    <!-- 内容区域：浅灰背景 -->
+    <div class="wechat-content" style="padding-top:74px; background:#f7f9f8;">
+        <div id="soupLibraryList" class="soup-select-list" style="padding:15px; background:transparent;">
+            <!-- JS 生成汤列表卡片 -->
+        </div>
+    </div>
+</div>
+
+<!-- 3. 海龟汤游戏主界面 (绿白清新风) -->
+<div id="turtleSoupGameScreen" class="page">
+    <div class="nav-bar" style="background:#ffffff; border-bottom:1px solid #f0f0f0;">
+        <!-- 返回/退出按钮 -->
+        <button class="nav-btn" onclick="quitTurtleSoup()"><i class="ri-close-line" style="color:#333;"></i></button>
+        <div class="nav-title" id="soupGameTitle" style="color:#333; font-weight:bold;">海龟汤</div>
+        
+        <!-- 【修改】右侧按钮组：下一局 + 结束 -->
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button class="nav-btn" onclick="openNextSoupSetup()" style="color:#333; font-size:14px; font-weight:bold;">下一局</button>
+            <button class="nav-btn" onclick="manualEndSoupGame()" style="color:#ff4d4d; font-size:14px; font-weight:bold;">结束</button>
+        </div>
+    </div>
+    
+    <!-- 聊天内容区域 -->
+    <div class="wechat-content" style="display:flex; flex-direction:column; padding-top:74px; padding-bottom:0; background: #f7f9f8;">
+        
+        <!-- 顶部汤面卡片 (清新浅绿风格) -->
+        <div class="soup-header-card" style="background: #e8f5e9; color: #1b5e20; padding: 20px; margin: 15px; border-radius: 16px; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.1); border: 1px solid #c8e6c9;">
+            <div class="soup-tags" id="soupGameTags" style="display:flex; gap:8px; margin-bottom:10px;">
+                <!-- 标签由JS生成 -->
+            </div>
+            
+            <!-- 汤面内容：固定高度，可滑动 -->
+            <div class="soup-content" id="soupGameSurface" style="font-size: 15px; line-height: 1.7; font-weight: 500; max-height: 120px; overflow-y: auto; padding-right: 5px;">
+                <!-- 汤面文字 -->
+            </div>
+            
+            <div class="soup-host-info" style="display:flex; align-items:center; margin-top:12px; font-size:12px; color:#66bb6a; border-top:1px dashed #c8e6c9; padding-top:8px;">
+                <div class="soup-host-avatar" id="soupHostAvatar" style="width:24px; height:24px; border-radius:50%; margin-right:8px; background-size:cover; background-position:center; border:1px solid #fff;"></div>
+                <span id="soupHostName">主持人: ???</span>
+            </div>
+        </div>
+
+        <!-- 聊天区域 -->
+        <div class="soup-chat-area" id="soupChatArea" style="flex: 1; overflow-y: auto; padding: 0 15px 20px;">
+            <!-- 消息记录 -->
+        </div>
+
+        <!-- 底部输入栏 (白底) -->
+        <div class="soup-bottom-bar" style="background: #ffffff; padding: 10px 15px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; border-top: 1px solid #f0f0f0;">
+            <!-- 汤底按钮 -->
+            <button class="soup-action-btn" onclick="showSoupAnswer()" style="display:flex; flex-direction:column; align-items:center; color:#666; background:none; border:none; width:40px;">
+                <i class="ri-book-open-line" style="font-size:22px;"></i>
+                <span style="font-size:10px;">汤底</span>
+            </button>
+            
+            <!-- 线索按钮 -->
+            <button class="soup-action-btn" onclick="handleSoupClue()" style="display:flex; flex-direction:column; align-items:center; color:#666; background:none; border:none; width:40px;">
+                <i class="ri-lightbulb-line" style="font-size:22px;"></i>
+                <span style="font-size:10px;">线索</span>
+            </button>
+
+            <!-- 输入框 -->
+            <input type="text" id="soupInput" class="soup-input" placeholder="输入问题..." style="flex:1; background:#f5f5f5; border:none; border-radius:20px; padding:10px 15px; font-size:15px; outline:none; color:#333;">
+            
+            <!-- 发送按钮 -->
+            <button class="soup-send-btn" onclick="sendSoupMessage()" style="width:36px; height:36px; border-radius:50%; background:#4caf50; color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                <i class="ri-send-plane-fill"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 4. 汤底展示弹窗 (白底黑字通用样式) -->
+<div id="soupAnswerModal" class="soup-answer-modal" style="background:#fff; color:#333; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+    <div class="soup-answer-title" style="color:#000;">汤底 (真相)</div>
+    <div class="soup-answer-content" id="soupAnswerContent" style="color:#444;"></div>
+    <div class="modal-buttons">
+        <button class="modal-btn modal-btn-confirm" onclick="document.getElementById('soupAnswerModal').classList.remove('show')" style="background:#4caf50; color:#fff;">关闭</button>
+    </div>
+</div>
+
+<!-- 5. 发送线索选择弹窗 (白底黑字) -->
+<div id="soupClueSelectModal" class="soup-answer-modal" style="background:#fff; color:#333; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+    <div class="soup-answer-title" style="color:#000;">选择一条线索发送</div>
+    <div id="soupClueList">
+        <!-- 线索项会在这里生成，样式由CSS控制 -->
+    </div>
+    <div class="modal-buttons" style="margin-top:15px;">
+        <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('soupClueSelectModal').classList.remove('show')" style="background:#f0f0f0; color:#666;">取消</button>
+    </div>
+</div>
+
+<!-- =============================================================== -->
+<!-- END: 海龟汤 完整功能模块 -->
+<!-- =============================================================== -->
+
+<!-- 新增：下一局海龟汤设置弹窗 -->
+<div id="turtleSoupNextGameModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">下一局设置</div>
+        
+        <!-- 选择主持人 -->
+        <div class="form-group">
+            <label class="form-label">谁是主持人？</label>
+            <div class="uc-mode-group">
+                <div class="uc-mode-btn active" onclick="selectNextSoupHost('friend')" id="btnNextSoupHostFriend">
+                    <div>好友</div>
+                    <div style="font-size:10px;">(我来猜)</div>
+                </div>
+                <div class="uc-mode-btn" onclick="selectNextSoupHost('user')" id="btnNextSoupHostUser">
+                    <div>我</div>
+                    <div style="font-size:10px;">(好友猜)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 选择汤源 -->
+        <div class="form-group">
+            <label class="form-label">选择汤底</label>
+            <div class="uc-mode-group">
+                <div class="uc-mode-btn active" onclick="selectNextSoupSource('random')" id="btnNextSoupSourceRandom">
+                    <div>随机汤</div>
+                </div>
+                <div class="uc-mode-btn" onclick="selectNextSoupSource('specific')" id="btnNextSoupSourceSpecific">
+                    <div>指定汤</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('turtleSoupNextGameModal').classList.remove('show')">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmNextSoup()" style="background:#4caf50; color:#fff;">开始下一局</button>
+        </div>
+    </div>
+</div>
+
     <script>
     
     // 打字机效果
@@ -25346,13 +26179,11 @@ async function requestPersistentStorage() {
 // 在你的应用启动时调用
 requestPersistentStorage();
 
-// --- ▼▼▼ 在这里更新你的每日公告 (含版权声明版) ▼▼▼ ---
 const CURRENT_ANNOUNCEMENT = {
-    version: 8, // 增加版本号
+    version: 9, // 版本号升级
     title: "jrsy 系统更新公告",
-    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>6.6元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能</h3><ul class="update-list"><li>1.增加拉黑功能，但只有你可以拉黑角色，角色无法拉黑你。</li><li>2.增加主动换头像功能，角色会根据你发的图片主动更换头像，不需要你额外去好友设置里换。</li><li>3.增加线下模式的单独界面和悬浮球界面切换（注意线下模式的消息在退出线下模式后全部隐藏，再次进入线下模式又会显示）</li><li>4.增加单独设置头像，可以在好友设置里单独设置在该好友聊天界面里的头像，适用于和多个角色用情头的情况。</li><li>5.增加谁是卧底游戏，并且可以在游戏中心单独设置游戏api，游戏期间会有悬浮球可以自由切换api。游戏结束可以选择查看角色本局的内心独白和局后想法。（注意游戏十分消耗额度，可以使用便宜的模型，或者使用按量模型看看是否比按次便宜）</li><li>6.增加群聊邀请功能</li><li>7. 增加列表重回功能，适用于html渲染导致无法</li><li>8.增加更改情侣空间在一起天数功能，记账本的账单可以长按删除。</li><li>9.查手机加入生成角色对你的聊天备注</li><li>10. 增加了情侣空间记忆互通以及用户活动检测，例如你发帖子发朋友圈查手机写情书等活动，角色都会知道，除了查手机其他活动都知道具体的内容，包括使用亲属卡角色也会知道。还有角色发帖子写情书悄悄话发朋友圈等也知道自己发的具体内容。</li></ul></div><div class="update-section"><h3 class="update-subtitle">Bug修复</h3><ul class="update-list"><li>1. 情侣空间退出状态栏显示的bug已修复</li><li>2. 情侣空间评论头像压缩bug已修复</li><li>3. 朋友圈减少角色发图片的概率，增强时间感知，修复点击图片后无法退出的bug</li></ul></div>`
+    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>6.6元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能</h3><ul class="update-list"><li>1.增加海龟汤游戏</li><li>2.新增视频通话功能</li><li>3.增加心声记录，可以查看历史心声</li><li>4.增加谁是卧底号码随机，用户不再是1号。</li></ul></div><div class="update-section"><h3 class="update-subtitle">Bug修复</h3><ul class="update-list"><li>1.修复线上消息消失跑到线下的bug，由于之前的已经被标记了所以没办法恢复，但是之后大概率不会再出现之前的情况了。</li><li>2.去掉了查手机通知角色的功能</li><li>3.朋友圈分组可见bug修复</li><li>4.修复谁是卧底流程卡住的bug</li></ul></div>`
 };
-
 
 
         // 全局变量
@@ -25435,6 +26266,12 @@ let accLongPressTimer = null;
 let simPhoneGlobalWallpaper = ''; // 新增：用于存储角色手机的全局通用壁纸
 
 let currentSimContext = { level: 'home', app: null, data: null };
+
+// 全局临时变量，用于下一局的设置
+let nextSoupConfig = {
+    host: 'friend',
+    source: 'random'
+};
 
 let currentDoujinShareId = null;
 
@@ -25559,6 +26396,12 @@ const dmColors = [
 ];
 
 let dmColorIndex = 0; 
+
+// --- 视频通话全局变量 ---
+let videoCallFriendId = null;
+let isVideoCallActive = false;
+let videoTimerInterval = null;
+let incomingVideoData = null;
 
 // 1. 数据定义
 
@@ -25913,6 +26756,570 @@ let storeGoodsData = {}; // 缓存每个分类的商品
 // --- 全局变量 ---
 let charadesTargetFriendId = null;
 let charadesCurrentWord = "";
+
+// --- 海龟汤模块全局变量 ---
+let turtleSoupState = {
+    active: false,
+    host: 'friend', // 'friend' or 'user'
+    source: 'random', // 'random' or 'specific'
+    friendId: null,
+    currentSoup: null, // { title, surface, bottom, tags, clues: [] }
+    clueCount: 0,
+    maxClues: 3,
+    isProcessing: false // 防止重复请求
+};
+
+// 预设海龟汤题库 (包含用户提供 + 经典扩充，共67道)
+const TURTLE_SOUP_DB = [
+    // --- 用户提供的经典题目 (1-7) ---
+    {
+        id: 'soup_001',
+        title: "海龟汤 (本味)",
+        tags: ["#经典", "#入门", "#生存"],
+        surface: "一位船长走进餐厅后点了碗海龟汤来喝，感觉味道有点「奇怪」便询问是用什么做的？店家理所当然回应“用海龟肉做的”，船长得知后震惊不已，痛哭过后离开店家便自杀了。请问发生了什么？",
+        bottom: "船长以前出海时曾遇上暴风雨，当时船在海上漂流许久，已经没有粮食可吃，更有不少船员因此离世。船员为了让船长活下去，将已死船员的肉割了下来，煮成汤骗说是海龟汤给船长喝，船长也因此活了下来。多年后船长吃到真正的海龟肉得知真相，伤心之下选择了结生命。",
+        clues: ["关于船长以前的经历", "关于那碗汤的味道", "关于死去的船员"]
+    },
+    {
+        id: 'soup_002',
+        title: "牛吃草",
+        tags: ["#恐怖", "#惊悚", "#高能"],
+        surface: "你独自住在郊外，附近邻居是一对养牛的夫妻，而你们两家之间只隔着一片草坪。某天深夜你被一阵喧闹声惊醒，接着听到“牛吃草”的声音，一会更听到撞门声响，但你不以为意接着睡下。隔天一早警方敲你家门，开门后你震惊不已……",
+        bottom: "前一天深夜隔壁邻居夫妻大吵，丈夫一怒之下砍下妻子的四肢并自杀，四肢断去的妻子想到你家求救，但因为没有了手脚只能咬着草「爬」过去，也因此发出宛如“牛吃草”的声音。妻子爬到你家后用头敲门企图引起注意，最终因为失血过多死在你的家门前。",
+        clues: ["关于“牛吃草”的声音来源", "关于撞门的方式", "关于邻居夫妻的关系"]
+    },
+    {
+        id: 'soup_003',
+        title: "河中水草",
+        tags: ["#经典", "#悲剧", "#误会"],
+        surface: "男孩的女友不慎掉入河中，男孩急忙跳入水中搜寻，却未能找到女友，伤心欲绝地离开了。几年后，他重返此地，看见一位老人正在河边钓鱼，但钓上来的鱼身上却没有任何水草。男孩不解，便询问老人为何鱼身上没有水草，老人回答：“这条河里从未长过水草。”听后，男孩痛苦地跳入河中自杀。请问他为何会这么做？",
+        bottom: "当年男孩在搜寻女友时，曾抓到一缕头发，却以为是水草而放手。后来得知河中根本没有水草，他意识到当时抓到的是女友的头发，却错失了救援的机会。因此，他深感后悔和自责，选择了自杀。",
+        clues: ["关于当年的“水草”触感", "关于男孩的心理活动", "关于女友的死因"]
+    },
+    {
+        id: 'soup_004',
+        title: "红眼睛",
+        tags: ["#细思极恐", "#灵异", "#经典"],
+        surface: "女子租的房子有一个洞，每次往里面看都会看到红红画面，以为隔壁是一间全红房间。某天女子忍不住问房东隔壁住什么人，听到答案后脸色发青……",
+        bottom: "房东回她“隔壁住了一个有红眼症的人”。言下之意，女子每次往隔壁看过去时，隔壁邻居也同时在通过那个洞「看」她，而女子看到的红色其实是邻居眼中的“红”。",
+        clues: ["关于红色的具体来源", "关于邻居的身体特征", "关于视线"]
+    },
+    {
+        id: 'soup_005',
+        title: "隧道火车",
+        tags: ["#经典", "#心理", "#误会"],
+        surface: "一名男子坐火车去隔壁镇看病，看完后把病都治好了，回程时他依旧搭火车回家，却没想到在中途跳车自杀，发生了什么？",
+        bottom: "男子原本是名盲人，到隔壁镇治病后重见光明，非常开心。回程时，因为火车开进隧道，导致车厢一片漆黑，男子以为自己又瞎了，绝望之下跳车自杀。",
+        clues: ["关于男子的病", "关于火车行驶的环境", "关于车厢内的光线"]
+    },
+    {
+        id: 'soup_006',
+        title: "室友的尖叫",
+        tags: ["#恐怖", "#反转", "#校园"],
+        surface: "清晨我被室友的尖叫声吵醒，睁开眼后，我却说不出话来。",
+        bottom: "我们宿舍几个人关系很好，经常会彼此做一些恶作剧。小红胆子最小，经常被我们吓到。可面对她的尖叫，这次我却无法发出声音，因为昨晚她们恶作剧的对象，正是我的尸体。",
+        clues: ["关于“我”的状态", "关于尖叫的原因", "关于恶作剧"]
+    },
+    {
+        id: 'soup_007',
+        title: "假外卖员",
+        tags: ["#犯罪", "#细思极恐", "#现实"],
+        surface: "“您好，您的外卖到了，请开门拿一下” “你放在门口就行” 一段时间后 “您好，您的外卖到了，请开门拿一下” “我不是说放……”",
+        bottom: "长期独居在外的我被一个盗窃犯盯上，他假装成外卖员打电话给我，想骗我开门让他入内，却没想到我让他把餐点放在门口逃过一劫。等第二次是真的外卖员致电给我时，我才发现两人声音不同，也因此知道真相，让我后怕不已。",
+        clues: ["关于两个电话的区别", "关于第一个人的身份", "关于主角的居住情况"]
+    },
+
+    // --- 额外扩充的经典题目 (8-67) ---
+
+    // --- 恐怖/惊悚类 ---
+    {
+        id: 'soup_008',
+        title: "葬礼",
+        tags: ["#变态", "#经典", "#心理"],
+        surface: "有母女三人，母亲死了，姐妹俩去参加葬礼。妹妹在葬礼上遇见了一个很帅的男子，并对他一见钟情。但是葬礼结束后，那个男子就不见了，妹妹怎么找也找不到他。一个月后，妹妹杀了姐姐。为什么？",
+        bottom: "妹妹杀了姐姐，是因为她想再举办一次葬礼。因为只有在葬礼上，她才有可能再次见到那个男子。",
+        clues: ["关于妹妹的动机", "关于男子的身份", "关于葬礼的作用"]
+    },
+    {
+        id: 'soup_009',
+        title: "半根火柴",
+        tags: ["#经典", "#悬疑", "#沙漠"],
+        surface: "一个人死在沙漠里，手里捏着半根火柴。周围没有任何足迹。发生了什么？",
+        bottom: "几个人乘热气球横穿沙漠，气球漏气无法承重。大家扔掉了所有行李，还是太重。最后决定抽火柴，抽到断的那根的人跳下去。这个人抽到了半根火柴。",
+        clues: ["关于交通工具", "关于其他伙伴", "关于衣服"]
+    },
+    {
+        id: 'soup_010',
+        title: "满地木屑",
+        tags: ["#经典", "#恶意", "#马戏团"],
+        surface: "马戏团里有两个侏儒，瞎子侏儒比另一个侏儒矮。马戏团只需要一个侏儒，马戏团的侏儒当然是越矮越好了。两个侏儒决定比谁的个子矮，个子高的那个去自杀。可是，在约定比个子的前一天，瞎子侏儒，也就是那个矮的侏儒已经在家里自杀死了。在他的家里只发现木头做的家具和满地的木屑。问他为什么自杀？",
+        bottom: "另一个侏儒趁瞎子睡觉时，把他家里所有的家具脚都锯短了一截。瞎子醒来后，摸到家具变矮了，以为自己长高了。因为绝望，他选择了自杀。",
+        clues: ["关于木屑的来源", "关于瞎子的认知", "关于另一个侏儒的行为"]
+    },
+    {
+        id: 'soup_011',
+        title: "床下的声音",
+        tags: ["#恐怖", "#细思极恐", "#童年阴影"],
+        surface: "爸爸去儿子房间，准备哄儿子睡觉。儿子说：“爸爸，我床下有人。”爸爸往床下一看，发现“儿子”趴在床下，瑟瑟发抖地对他说：“爸爸，我床上有个人。”",
+        bottom: "这其实是一对双胞胎，其中一个是连环杀手/或者人格分裂。但最经典的解释是：这是一个灵异故事，或者是一个精神分裂的父亲的幻觉。也有一种解法是：有一个是鬼，或者是杀手假扮的。",
+        clues: ["关于孩子的数量", "关于爸爸的反应", "关于谁是真儿子"]
+    },
+    {
+        id: 'soup_012',
+        title: "绿衣服",
+        tags: ["#经典", "#变态", "#伦理"],
+        surface: "一个刚退伍的老兵，有一天在街上看到一个穿绿衣服的小女孩，他甚至没看清她的脸，就当街大哭起来。为什么？",
+        bottom: "老兵在战场上曾被炮弹炸伤，失去了双腿和双手。他的战友为了救他，把他装在一个绿色的行军包里背着逃命。他看到绿衣服的小女孩，想起了自己当时像个肉球一样被装在包里的样子（或者误以为那是战友）。更黑暗的版本是：他其实已经疯了，把小女孩看成了当初那个绿色的包裹。",
+        clues: ["关于老兵的身体状况", "关于绿衣服的联想", "关于战争经历"]
+    },
+    {
+        id: 'soup_013',
+        title: "十楼的窗户",
+        tags: ["#恐怖", "#观察", "#偷窥"],
+        surface: "我在十楼的阳台看风景，对面楼的十楼也有个人在看风景。我每天都能看到他，他也每天看着我。有一天，我看到他在擦窗户，擦着擦着，他突然停下来，盯着我看了一会，然后把手伸向窗外。我死了。为什么？",
+        bottom: "那个人是个杀手。他在擦窗户时，从玻璃的反射中看到了我（或者通过望远镜）。他发现我正在用望远镜偷窥他杀人的现场（或者看到了不该看的东西）。他伸出手是在比划距离/开枪。当晚他过来杀了我。",
+        clues: ["关于那个人在做什么", "关于我的行为", "关于视线"]
+    },
+    {
+        id: 'soup_014',
+        title: "婴儿啼哭",
+        tags: ["#恐怖", "#产后", "#精神"],
+        surface: "半夜，婴儿的哭声吵醒了妈妈。妈妈起身去哄孩子，孩子不哭了。妈妈回到床上，又听到了哭声。如此反复几次，妈妈终于崩溃了，把婴儿扔出了窗外。第二天，警察来了。为什么？",
+        bottom: "妈妈患有严重的产后精神病或幻听。其实婴儿早就死了（或者是玩偶）。她听到的哭声是幻觉，或者根本不是婴儿的哭声。当她把“婴儿”扔出窗外后，发现楼下围观的人群中，有人抱着她真正的孩子（或者发现扔下去的是别的东西）。另一种解法：婴儿其实是连体婴，她扔了一个，另一个还在哭。",
+        clues: ["关于婴儿的状态", "关于妈妈的精神状态", "关于哭声的来源"]
+    },
+    {
+        id: 'soup_015',
+        title: "没有水的鱼缸",
+        tags: ["#致郁", "#亲情", "#误会"],
+        surface: "小明养了一条金鱼，他非常疼爱它。每天都给它喂食，换水。可是有一天，金鱼死了。小明很伤心，把鱼缸里的水倒干，然后把鱼缸放在了床头。第二天，小明也死了。为什么？",
+        bottom: "小明是梦游症患者。他梦游时把头伸进了鱼缸里，以为自己在潜水。之前因为有水，他会憋醒。那天水倒干了，他在梦游中把头卡在鱼缸里，导致窒息而死（或者撞击致死）。",
+        clues: ["关于小明的睡眠习惯", "关于鱼缸的位置", "关于死因"]
+    },
+    
+    // --- 烧脑/逻辑类 ---
+    {
+        id: 'soup_016',
+        title: "签名",
+        tags: ["#烧脑", "#明星", "#逻辑"],
+        surface: "大明星A在给粉丝签名。粉丝B拿到了签名，很高兴地走了。五分钟后，大明星A死在了座位上。警方调查发现，是粉丝B杀的，但是粉丝B没有使用任何凶器，也没有直接接触A的身体（除了递纸笔）。",
+        bottom: "粉丝B递给明星的纸张其实经过了特殊处理（例如浸泡了剧毒且易挥发的液体，或者边缘极其锋利涂了毒）。明星在签名时习惯性地舔了一下手指翻页（或者被纸割破手），导致中毒身亡。",
+        clues: ["关于纸张", "关于明星的习惯", "关于毒药"]
+    },
+    {
+        id: 'soup_017',
+        title: "跳伞",
+        tags: ["#逻辑", "#职业", "#意外"],
+        surface: "一个人跳伞，降落伞没开，但他没有摔死，也没有受伤。为什么？",
+        bottom: "因为他还没有起飞，这只是地面模拟训练；或者他跳伞的高度非常低（例如从桌子上跳下来）；或者他跳的是“伞”（名词），不是动作。",
+        clues: ["关于高度", "关于地点", "关于“跳伞”的定义"]
+    },
+    {
+        id: 'soup_018',
+        title: "断臂",
+        tags: ["#经典", "#逻辑", "#邮寄"],
+        surface: "一个人收到一个包裹，打开看是一个被切下来的活人手臂。他淡定地把手臂包好，寄给了另一个人。为什么？",
+        bottom: "这三个人（寄件人、收件人、第三人）遇难被困，为了生存约定轮流切掉一只手作为食物。前两人已经切了，这是第三个人（收件人）在履行承诺，证明他也切了，并把“食物”寄给同伴。",
+        clues: ["关于他们之前的约定", "关于手臂的用途", "关于他们的关系"]
+    },
+    {
+        id: 'soup_019',
+        title: "车祸",
+        tags: ["#逻辑", "#细节", "#声音"],
+        surface: "男子开车在山路上，打开收音机听音乐。突然，他听到收音机里传来了新闻播报，说某地发生了泥石流。男子立刻停车，跳出车外，随后车子坠入悬崖。他为什么知道要跳车？",
+        bottom: "男子并不是听到了关于这里的泥石流新闻，而是因为他听的是录播的磁带/CD。新闻里播报的内容是他很久以前听过的，或者新闻里提到了“现在时间是XX”，与实际不符。他意识到车内的收音机被篡改了（或者车子本身有问题），或者他看到了前方的路况。",
+        // 修正版底：男子本来是盲人，刚治好眼睛。他开车时以为是白天，但收音机里说“现在是北京时间晚上12点”。他意识到自己并没有复明，眼前的一切（亮光）是幻觉，或者他把车灯当成了阳光，其实前面是悬崖。
+        clues: ["关于男子的视力", "关于收音机的内容", "关于时间"]
+    },
+    {
+        id: 'soup_020',
+        title: "图书馆",
+        tags: ["#逻辑", "#声音", "#误会"],
+        surface: "我在图书馆看书，对面坐着一个美女。她一直盯着我看。过了一会，她拿出一张纸条递给我，上面写着：“我喜欢你”。我看完后，把纸条撕了，然后她就死了。为什么？",
+        bottom: "美女其实是哑巴，或者被绑架了/控制了。她写的纸条背面有求救信息。我只看了正面，以为是恶作剧或者表白，就撕了。绑匪（可能就在旁边）看到求救失败，或者为了灭口，杀了她。",
+        clues: ["关于纸条的内容", "关于女生的处境", "关于周围的人"]
+    },
+
+    // --- 搞笑/冷幽默类 ---
+    {
+        id: 'soup_021',
+        title: "喝水",
+        tags: ["#搞笑", "#脑筋急转弯"],
+        surface: "小明喝了一杯水，然后他就死了。为什么？",
+        bottom: "因为那是“王水”（强酸）。或者水里有毒。或者杯子掉下来砸死了他。最搞笑的答案：他喝的时候忘了张嘴（窒息？）。正经底：小明是落水者，喝了一肚子水淹死了。",
+        clues: ["关于水的成分", "关于喝水的地点", "关于小明的身份"]
+    },
+    {
+        id: 'soup_022',
+        title: "超人",
+        tags: ["#搞笑", "#脑洞"],
+        surface: "一个人站在高楼顶上，大喊一声“我是超人”，然后跳了下去。他没有死，也没有受伤。为什么？",
+        bottom: "因为他真的是超人。",
+        clues: ["关于他的身份", "关于物理规则"]
+    },
+
+    // --- 更多扩充 (混合类型) ---
+    {
+        id: 'soup_023',
+        title: "海鸥肉",
+        tags: ["#经典", "#变体", "#生存"],
+        surface: "一个盲人去餐厅吃海鸥肉，吃完后他问服务员：“这是海鸥肉吗？”服务员说是。盲人走出餐厅就自杀了。",
+        bottom: "和海龟汤类似。盲人以前遇难时，同伴给他吃过“海鸥肉”。现在吃到真的，发现味道不同，意识到当时吃的是……同伴的肉。",
+        clues: ["关于盲人的过去", "关于肉的味道", "关于同伴"]
+    },
+    {
+        id: 'soup_024',
+        title: "滴水声",
+        tags: ["#恐怖", "#经典"],
+        surface: "女孩一个人在家，听到厕所传来滴水声。她关紧了水龙头，但滴水声还在。她吓得躲进被子里，把手伸到床下，让狗狗舔她的手以寻求安慰。第二天，女孩被杀了。",
+        bottom: "凶手躲在床下，舔手的是凶手。滴水声是凶手杀死了狗，狗血滴落的声音，或者是凶手把狗挂在了淋浴头上。",
+        clues: ["关于狗狗的去向", "关于滴水声的来源", "关于床下"]
+    },
+    {
+        id: 'soup_025',
+        title: "蜡烛",
+        tags: ["#恐怖", "#停电", "#误会"],
+        surface: "停电了，我点燃了蜡烛。有人敲门，我打开门，看到邻居一脸惊恐。我刚想说话，邻居就跑了。第二天，邻居死了。",
+        bottom: "其实我家并没有停电，我是精神病或者是鬼。我点燃的不是蜡烛，而是……（比如手指、易燃物）。或者，我身后站着一个鬼/凶手，邻居是由于看到了我身后的东西而吓跑的，随后被追杀。",
+        clues: ["关于停电的真相", "关于邻居看到了什么", "关于我身后的东西"]
+    },
+    {
+        id: 'soup_026',
+        title: "气球",
+        tags: ["#逻辑", "#物理"],
+        surface: "一个小男孩拿着气球进了电梯。电梯门关上后，气球破了。为什么？",
+        bottom: "电梯故障，急速下降（或上升），气压变化导致气球爆炸。或者电梯里有针状物。",
+        clues: ["关于电梯的状态", "关于气压", "关于男孩的动作"]
+    },
+    {
+        id: 'soup_027',
+        title: "日记",
+        tags: ["#细思极恐", "#推理"],
+        surface: "我捡到了一本日记，上面写着：第一天，我杀了一个人；第二天，我杀了两方人；第三天，我杀了三个人……我吓得把日记扔了。",
+        bottom: "日记的作者在记录杀蚊子/苍蝇。或者，这是一个倒计时，第N天他会杀掉捡到日记的人。",
+        clues: ["关于杀的对象", "关于日记的性质"]
+    },
+    {
+        id: 'soup_028',
+        title: "闹钟",
+        tags: ["#生活", "#意外"],
+        surface: "闹钟响了，男子醒来，关掉闹钟，然后死了。",
+        bottom: "男子在进行深海潜水（或在太空中），设定闹钟是为了提醒氧气快耗尽了。他睡着了，闹钟响时已经来不及换氧气瓶了。",
+        clues: ["关于男子的位置", "关于闹钟的用途"]
+    },
+    {
+        id: 'soup_029',
+        title: "双胞胎",
+        tags: ["#伦理", "#悲剧"],
+        surface: "哥哥杀了弟弟，然后把弟弟埋在树下。第二年，树长得很茂盛。哥哥看着树，笑了。为什么？",
+        bottom: "因为哥哥和弟弟是连体婴。哥哥为了生存（或者为了独立），做了分离手术，但弟弟牺牲了。埋在树下的是分离出来的弟弟的身体部分。哥哥笑是因为他终于自由了。",
+        clues: ["关于他们的身体状况", "关于手术", "关于哥哥的笑"]
+    },
+    {
+        id: 'soup_030',
+        title: "可乐",
+        tags: ["#谋杀", "#细节"],
+        surface: "两个人去买可乐，买了两瓶。A喝了一口，死了。B喝了一口，没事。警察查出两瓶可乐都有毒。为什么？",
+        bottom: "毒药涂在瓶口上。A是对嘴喝的，B是用吸管喝的（或者倒进杯子里喝的）。",
+        clues: ["关于喝的方式", "关于毒药的位置"]
+    },
+    {
+        id: 'soup_031',
+        title: "生日蜡烛",
+        tags: ["#恐怖", "#家庭"],
+        surface: "小明过生日，吹灭了蜡烛。爸爸妈妈都很高兴。开灯后，爸爸妈妈都死了。",
+        bottom: "小明许的愿望是“希望爸爸妈妈死掉”或者是“我想当孤儿”。或者，小明吹灭蜡烛的瞬间，凶手（躲在暗处）动手了。",
+        clues: ["关于小明的愿望", "关于凶手"]
+    },
+    {
+        id: 'soup_032',
+        title: "雨夜",
+        tags: ["#恐怖", "#灵异"],
+        surface: "雨夜，男子开车经过一个坟场。看到一个女子在招手搭车。男子让女子上车。女子说：“谢谢，我刚刚从坟墓里爬出来，好冷。”男子笑了笑，说：“没事，我刚死的时候也觉得冷。”",
+        bottom: "两个都是鬼。或者男子是精神病，以为自己也是鬼。",
+        clues: ["关于男子的身份", "关于女子的身份"]
+    },
+    {
+        id: 'soup_033',
+        title: "镜子",
+        tags: ["#细思极恐"],
+        surface: "我每天早上都要照镜子。今天照镜子时，我发现镜子里的我没有动。我吓坏了。",
+        bottom: "镜子其实是一块玻璃（或者双面镜），对面站着另一个人（可能长得很像，或者是杀手），今天他没有模仿我的动作。",
+        clues: ["关于镜子的材质", "关于对面的东西"]
+    },
+    {
+        id: 'soup_034',
+        title: "电梯超重",
+        tags: ["#经典", "#恐怖"],
+        surface: "十个人进了电梯，电梯超重报警。大家扔掉了所有行李，还是超重。最后商量后，把其中一个人的手砍断了，电梯就不超重了。",
+        bottom: "这十个人是恐怖分子（或变态），他们带着一具尸体（或被绑架的人）藏在行李箱里。行李扔了，但尸体还在。为了减轻重量，或者为了某种仪式，他们砍断了手。",
+        clues: ["关于第十一个人", "关于行李的内容"]
+    },
+    {
+        id: 'soup_035',
+        title: "捉迷藏",
+        tags: ["#恐怖", "#童真"],
+        surface: "五个小朋友玩捉迷藏。四个藏，一个找。找的小朋友很快找到了三个，但是无论如何也找不到第四个。天黑了，大家回家了。第二天，新闻报道说，昨天玩捉迷藏的地方发现了一具尸体。",
+        bottom: "第四个小朋友躲进了废弃的冰箱（或箱子）里，出不来了，闷死了。",
+        clues: ["关于躲藏的地点", "关于尸体的身份"]
+    },
+    {
+        id: 'soup_036',
+        title: "楼道声控灯",
+        tags: ["#悬疑", "#细节"],
+        surface: "我住在老式小区，楼道灯是声控的。每天晚上回家，我都会用力跺脚让灯亮。今天晚上，我跺了很多次脚，灯都没亮。我以为灯坏了，摸黑上楼。回到家，我打开电视，发现新闻里正在播报我们小区发生了杀人案。",
+        bottom: "杀人犯就躲在楼道角落里。我跺脚的时候，杀人犯为了不暴露，用手捂住了声控开关（或者发出了更大的声音掩盖，或者切断了电源）。",
+        clues: ["关于灯不亮的原因", "关于杀人犯的位置"]
+    },
+    {
+        id: 'soup_037',
+        title: "书签",
+        tags: ["#情感", "#误会"],
+        surface: "男子借了女子一本书。还书的时候，他在书里夹了一张书签。女子看到书签后，哭了。",
+        bottom: "书签是男子和另一个女人的合照。或者，书签上写着“我们分手吧”。或者，那本书是女子送给前男友的遗物，书签是前男友的。",
+        clues: ["关于书签的内容", "关于两人的关系"]
+    },
+    {
+        id: 'soup_038',
+        title: "星星",
+        tags: ["#悲剧", "#童话"],
+        surface: "小女孩指着天上的星星说：“妈妈，那颗星星好亮啊。”妈妈哭了。",
+        bottom: "小女孩得了绝症，即将离世。妈妈告诉她，人死了会变成星星。小女孩指着星星说亮，意味着她觉得自己快要变成那颗星星了。",
+        clues: ["关于小女孩的身体", "关于星星的寓意"]
+    },
+    {
+        id: 'soup_039',
+        title: "跳水",
+        tags: ["#运动", "#意外"],
+        surface: "跳水运动员从十米台跳下。入水后，泳池里的水变成了红色。",
+        bottom: "泳池里的水被放干了（或者水位极低）。运动员跳下去直接摔在了池底。红色是血。",
+        clues: ["关于泳池的水位", "关于红色"]
+    },
+    {
+        id: 'soup_040',
+        title: "电话亭",
+        tags: ["#悬疑", "#推理"],
+        surface: "雨夜，一个男子在电话亭里打电话。打完电话，他倒在地上死了。玻璃碎了一地。",
+        bottom: "男子在打电话时，说到了激动的时刻（或者被告知了噩耗），挥舞手臂打碎了玻璃，割破了动脉。或者，电话亭被雷击中/车撞。",
+        clues: ["关于死因", "关于玻璃"]
+    },
+    {
+        id: 'soup_041',
+        title: "哑巴",
+        tags: ["#细思极恐"],
+        surface: "哑巴晚上回家，看到家里有小偷。他想喊，喊不出来。他想跑，跑不掉。第二天，哑巴死了，手里紧紧攥着一张纸。",
+        bottom: "哑巴写了求救信或者遗书。或者，纸上写着小偷的名字（熟人作案）。",
+        clues: ["关于纸条", "关于小偷的身份"]
+    },
+    {
+        id: 'soup_042',
+        title: "过山车",
+        tags: ["#意外", "#健康"],
+        surface: "男子坐完过山车，下来后发现自己失明了。",
+        bottom: "男子视网膜脱落（高度近视坐过山车容易导致）。或者，过山车速度太快导致脑充血压迫视神经。",
+        clues: ["关于男子的身体状况", "关于过山车"]
+    },
+    {
+        id: 'soup_043',
+        title: "照片墙",
+        tags: ["#灵异", "#恐怖"],
+        surface: "我一个人住。墙上挂满了我的照片。有一天，我发现照片里的我在笑，可我记得拍照时我没有笑。",
+        bottom: "有人偷偷潜入我家，把照片换了。或者，照片背后有眼睛在看（恐怖片情节）。",
+        clues: ["关于照片的来源", "关于房间的安全"]
+    },
+    {
+        id: 'soup_044',
+        title: "乞丐",
+        tags: ["#人性", "#社会"],
+        surface: "我每天都会给楼下的乞丐一块钱。今天我没给，乞丐问我为什么。我说我结婚了，钱要省着花。乞丐听后，打了我一巴掌。",
+        bottom: "乞丐觉得“你竟然拿我的钱去养老婆！”（把施舍当成了理所当然）。",
+        clues: ["关于乞丐的逻辑", "关于钱的归属感"]
+    },
+    {
+        id: 'soup_045',
+        title: "井底",
+        tags: ["#恐怖", "#生存"],
+        surface: "两个人掉进了枯井。几天后，其中一个人死了。另一个人活着出去了。活着的人出去后，第一件事是去买肉吃。",
+        bottom: "活着的人吃了死者的肉才活下来的。或者，死者是胖子，活着的人踩着他的尸体爬上去的。",
+        clues: ["关于生存方式", "关于肉"]
+    },
+    {
+        id: 'soup_046',
+        title: "灯塔",
+        tags: ["#经典", "#责任"],
+        surface: "男子在看报纸，看到一条新闻后，他关掉了灯，然后跳楼自杀了。",
+        bottom: "男子是灯塔看守人。昨晚他忘了开灯（或者误关了灯），导致船只触礁沉没，死了很多人。新闻报道了这次海难。他愧疚难当。",
+        clues: ["关于男子的职业", "关于灯的作用", "关于新闻"]
+    },
+    {
+        id: 'soup_047',
+        title: "蜗牛",
+        tags: ["#经典", "#悲剧"],
+        surface: "一个人在这个世界只有一只蜗牛是朋友。有一天他睡着了，蜗牛以为他死了，就从他身上爬过去。那个人醒来，发现身上有粘液，以为自己身体腐烂了（或者得了绝症），就自杀了。",
+        bottom: "就是这个逻辑。这人可能本身就处于极度抑郁或病态心理中。",
+        clues: ["关于蜗牛的习性", "关于人的心理"]
+    },
+    {
+        id: 'soup_048',
+        title: "耳机",
+        tags: ["#意外", "#安全"],
+        surface: "女孩戴着耳机在街上走。突然她摔倒了，再也没有起来。",
+        bottom: "女孩听不到周围的声音，被车撞了。或者，耳机线缠住了什么东西，勒死了她（小概率）。",
+        clues: ["关于周围环境", "关于死因"]
+    },
+    {
+        id: 'soup_049',
+        title: "新鞋",
+        tags: ["#职场", "#推理"],
+        surface: "我穿了一双新鞋去上班。老板看到我的鞋，把我开除了。",
+        bottom: "我是工厂流水线工人（或必须穿防静电/无尘鞋的岗位）。穿普通新鞋违反了安全规定。或者，鞋子是竞争对手品牌的（如果在竞品公司）。",
+        clues: ["关于工作性质", "关于鞋子的类型"]
+    },
+    {
+        id: 'soup_050',
+        title: "气球2",
+        tags: ["#逻辑", "#犯罪"],
+        surface: "一个人在野外，拿着一个气球。他松手，气球飞走了。然后他死了。",
+        bottom: "那人是悬在悬崖边的求救者，气球是他唯一的求救信号（或者支撑物）。气球飞了，他绝望了，或者失去了浮力（如果是那种大气球）。另一种：他在玩致命游戏。",
+        clues: ["关于地理位置", "关于气球的作用"]
+    },
+    {
+        id: 'soup_051',
+        title: "双人床",
+        tags: ["#恐怖", "#细节"],
+        surface: "我买了一张双人床，但我一个人睡。每天早上醒来，我都发现身边的枕头有凹陷。",
+        bottom: "有人（或者鬼）晚上睡在我旁边。或者，我梦游。",
+        clues: ["关于家里是否有人", "关于凹陷"]
+    },
+    {
+        id: 'soup_052',
+        title: "日历",
+        tags: ["#悬疑", "#时间"],
+        surface: "囚犯每天都在墙上画一道杠。有一天，他画完后，撞墙死了。",
+        bottom: "他原本以为刑期快满了。画完最后一道，发现日期算错了，或者是被告知刑期延长了/永远出不去了。",
+        clues: ["关于画杠的意义", "关于囚犯的心态"]
+    },
+    {
+        id: 'soup_053',
+        title: "牙医",
+        tags: ["#谋杀", "#职业"],
+        surface: "牙医给病人拔牙。拔完后，牙医死了。",
+        bottom: "病人的嘴里藏了毒针/微型手枪。或者是病人是黑帮老大，牙医知道太多秘密，被灭口。或者牙医自己有心脏病，被吓死了。",
+        clues: ["关于病人的身份", "关于死因"]
+    },
+    {
+        id: 'soup_054',
+        title: "魔术",
+        tags: ["#意外", "#悲剧"],
+        surface: "魔术师在台上表演电锯惊魂。表演结束后，观众欢呼，魔术师死了。",
+        bottom: "道具失灵，真的把人锯了。观众以为是表演效果。",
+        clues: ["关于道具", "关于观众的反应"]
+    },
+    {
+        id: 'soup_055',
+        title: "敲门声",
+        tags: ["#恐怖", "#密室"],
+        surface: "我在密室里。听到了敲门声。我不敢开门。敲门声停了，我流出了血。",
+        bottom: "我是潜水员，在深海潜水钟/潜艇里。敲门声是外面的压力/怪物/救援人员（但无法打开）。流血是因为缺氧/水压/或者我已经死了，这是灵魂的视角。",
+        clues: ["关于密室的环境", "关于流血的原因"]
+    },
+    {
+        id: 'soup_056',
+        title: "猎人",
+        tags: ["#逻辑", "#误杀"],
+        surface: "猎人瞄准了一只熊。开枪后，猎人死了。",
+        bottom: "雪崩。枪声引发了雪崩。或者，枪炸膛了。",
+        clues: ["关于环境", "关于枪"]
+    },
+    {
+        id: 'soup_057',
+        title: "车祸现场",
+        tags: ["#灵异", "#循环"],
+        surface: "我路过车祸现场，看到一个人躺在地上。我觉得他很眼熟。走近一看，那是我自己。",
+        bottom: "我已经死了，那是我的尸体。我现在是灵魂。",
+        clues: ["关于“我”的状态", "关于车祸"]
+    },
+    {
+        id: 'soup_058',
+        title: "生日礼物",
+        tags: ["#恶作剧", "#意外"],
+        surface: "我收到一个生日礼物，是一个精美的盒子。打开后，我被炸死了。",
+        bottom: "那是炸弹包裹。可能是仇杀。",
+        clues: ["关于送礼人", "关于盒子"]
+    },
+    {
+        id: 'soup_059',
+        title: "高跟鞋",
+        tags: ["#推理", "#细节"],
+        surface: "男子下班回家，看到门口有一双高跟鞋。他冲进卧室，杀了妻子。",
+        bottom: "那是他妻子的鞋，但他妻子双腿残疾（或者没有脚），根本穿不了高跟鞋。这意味着家里有男人（出轨），或者妻子一直在装残疾欺骗他。",
+        clues: ["关于妻子的身体", "关于鞋子的主人"]
+    },
+    {
+        id: 'soup_060',
+        title: "图书馆2",
+        tags: ["#细节", "#强迫症"],
+        surface: "他在图书馆把一本书放回书架，然后被捕了。",
+        bottom: "他把书放回的位置，正好触发了机关/警报。或者那本书里夹着凶器/毒品/机密文件，警察在蹲守。",
+        clues: ["关于书的内容", "关于警察"]
+    },
+    {
+        id: 'soup_061',
+        title: "游泳池",
+        tags: ["#物理", "#意外"],
+        surface: "一个人在游泳池里游泳。突然他不动了，沉了下去。救生员没有去救他。",
+        bottom: "泳池里的水突然被放干了（不可能）。其实是那个人是假人/尸体。或者，救生员也是瞎子/死人。正解：那个人突发疾病猝死，救生员以为他在憋气/潜水。",
+        clues: ["关于救生员", "关于那个人"]
+    },
+    {
+        id: 'soup_062',
+        title: "红酒",
+        tags: ["#谋杀", "#毒"],
+        surface: "宴会上，主人给大家倒红酒。所有人都喝了。最后只有主人死了。",
+        bottom: "毒药在冰块里。别人喝得快，冰块没化。主人喝得慢（或者一直在拿在手里），冰块化了，毒药释放。",
+        clues: ["关于喝的速度", "关于杯子里的东西"]
+    },
+    {
+        id: 'soup_063',
+        title: "录音笔",
+        tags: ["#悬疑", "#证据"],
+        surface: "男子死在桌前，手边有一支录音笔。警察按下播放键，听到男子说：“我没法活下去了……”接着是枪声。警察判定是他杀。",
+        bottom: "如果是自杀，录音笔在录完枪声后，谁来按停止键/倒带键？（老式录音笔逻辑）。或者，录音里有第三人的呼吸声。",
+        clues: ["关于录音笔的状态", "关于枪声"]
+    },
+    {
+        id: 'soup_064',
+        title: "鹦鹉",
+        tags: ["#推理", "#线索"],
+        surface: "独居老人死了。家里只有一只鹦鹉。警察来了，鹦鹉一直说：“别杀我，别杀我！”",
+        bottom: "鹦鹉目睹了凶杀案，复述了老人临死前的话。或者，鹦鹉复述了凶手的话。",
+        clues: ["关于鹦鹉的话", "关于凶手"]
+    },
+    {
+        id: 'soup_065',
+        title: "盲人复明",
+        tags: ["#经典", "#心理"],
+        surface: "盲人做手术复明了。他拆开纱布，看到面前的妻子，然后把妻子杀了。",
+        bottom: "妻子长得太丑了？不对。妻子其实是当年弄瞎他的人。或者，他发现妻子和当年描述的完全不一样（一直在骗他）。",
+        clues: ["关于妻子的长相/身份", "关于失明的原因"]
+    },
+    {
+        id: 'soup_066',
+        title: "沙漠尸体",
+        tags: ["#经典", "#推理"],
+        surface: "沙漠里有一具尸体，身边散落着几个行李箱。尸体没有穿衣服。",
+        bottom: "这是坠机事件。衣服在坠落过程中被气流撕碎了。或者，为了求生（太热/或者为了显示自己没有武器）。正解倾向于坠机。",
+        clues: ["关于衣服去向", "关于死因"]
+    },
+    {
+        id: 'soup_067',
+        title: "双胞胎2",
+        tags: ["#替身", "#谋杀"],
+        surface: "妹妹去参加选美比赛。姐姐在台下看着，突然哭了。",
+        bottom: "姐姐和妹妹长得一模一样。其实台上的是姐姐（或妹妹），她们互换了身份。现在台上的那个“妹妹”获得了成功，而台下的这个将永远做那个“影子”或者“死人”。",
+        clues: ["关于身份互换", "关于哭的原因"]
+    }
+];
 
 // 默认是 'user' (用户演，AI猜)，切换后变为 'ai' (AI演，用户猜)
 let charadesActor = 'user';
@@ -26342,7 +27749,7 @@ function getRandomColor() {
 
 
 /**
- * [V9 - 简化版] 打开心声面板 (已移除电影票根样式)
+ * [V10 - 带历史记录版] 打开心声面板
  */
 function openHeartsVoiceModal() {
     const friend = friends.find(f => f.id === currentChatFriendId);
@@ -26351,9 +27758,9 @@ function openHeartsVoiceModal() {
     const modal = document.getElementById('heartsVoiceModal');
     const modalContent = modal.querySelector('.modal-content');
 
-    // 确保移除可能存在的票根样式类
-    modalContent.className = 'modal-content';
+    modalContent.className = 'modal-content'; // 重置样式
 
+    // 读取当前数据
     const heartsVoiceData = friend.heartsVoice || { 
         emoji: '( ´• ω •` )', 
         favorability: '...',
@@ -26362,10 +27769,9 @@ function openHeartsVoiceModal() {
         thought: '...' 
     };
     
-    // 直接渲染白色默认样式
     modalContent.innerHTML = `
         <div id="heartsVoiceHeader" style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 10px; padding-top: 5px;">
-            <div id="heartsVoiceAvatar" class="friend-avatar" style="width: 40px; height: 40px; border-radius: 6px; background-image: url(${friend.avatarImage || ''});">${friend.avatarImage ? '' : friend.avatar}</div>
+            <div id="heartsVoiceAvatar" class="friend-avatar" style="width: 40px; height: 40px; border-radius: 6px; background-image: url(${friend.avatarImage || ''});">${friend.avatarImage ? '' : (friend.avatar || friend.name[0])}</div>
             <div id="heartsVoiceName" style="font-size: 16px; font-weight: bold;">${friend.name}</div>
         </div>
         <div id="heartsVoiceEmoji" style="font-size: 48px; margin: 10px 0; line-height: 1.2;">${heartsVoiceData.emoji}</div>
@@ -26375,10 +27781,18 @@ function openHeartsVoiceModal() {
             <div><strong>动作：</strong><span>${heartsVoiceData.action}</span></div>
             <div><strong>心声：</strong><span>${heartsVoiceData.thought}</span></div>
         </div>
+        
+        <!-- 【新增】查看历史记录按钮 -->
+        <button class="view-history-btn" onclick="openHeartsVoiceHistory()">
+            <i class="ri-history-line"></i> 查看心声记录
+        </button>
     `;
 
     modal.classList.add('show');
-    modal.addEventListener('click', closeHeartsVoiceModalOnClickOutside);
+    // 绑定点击外部关闭
+    modal.onclick = (e) => {
+        if (e.target === modal) closeHeartsVoiceModal();
+    };
 }
 
 function closeHeartsVoiceModal() {
@@ -28720,6 +30134,14 @@ list.appendChild(item);
 function openChat(friendId) {
     const friend = friends.find(f => f.id === friendId);
     if (!friend) return;
+    if (friend.isOfflineMode) {
+        // 如果这个好友之前是线下模式，进来时自动把全局开关打开（默认为悬浮球模式）
+        currentOfflineMode = 'float';
+    } else {
+        // 如果是普通好友，强制把全局开关关掉，防止串台
+        currentOfflineMode = 'none';
+    }
+   
     const chatScreen = document.getElementById('chatScreen');
     // 1. 先清除之前可能残留的所有隐藏头像样式
     chatScreen.classList.remove('hide-avatars-both', 'hide-avatars-received', 'hide-avatars-sent');
@@ -28775,6 +30197,25 @@ if (!friend.proactiveMessageDebt || friend.proactiveMessageDebt <= 0) {
     const listenTogetherButton = functionMenu.querySelector('.function-item[onclick="openListenTogether()"]');
     let redEnvelopeButton = functionMenu.querySelector('.function-item[onclick="openRedEnvelopeModal()"]');
     let pollButton = functionMenu.querySelector('.function-item[onclick="openPollModal()"]');
+
+// 在 chatFunctions 的 function-menu 里动态添加
+let videoCallButton = functionMenu.querySelector('.function-item[onclick="startVideoCallWrapper()"]');
+if (!videoCallButton) {
+    videoCallButton = document.createElement('div');
+    videoCallButton.className = 'function-item';
+    videoCallButton.setAttribute('onclick', 'startVideoCallWrapper()');
+    videoCallButton.innerHTML = `<div class="function-icon"><i class="ri-vidicon-line"></i></div><div class="function-label">视频通话</div>`;
+    
+    // 插入到语音通话按钮后面，或者直接 append
+    const voiceBtn = functionMenu.querySelector('.function-item[onclick="startVoiceCall()"]');
+    if (voiceBtn) {
+        voiceBtn.insertAdjacentElement('afterend', videoCallButton);
+    } else {
+        functionMenu.appendChild(videoCallButton);
+    }
+}
+// 私聊显示，群聊隐藏
+videoCallButton.style.display = friend.isGroup ? 'none' : 'flex';
 
     if (friend.isGroup) {
         // 如果是群聊
@@ -28894,8 +30335,8 @@ function addPatPatMessageToDOM(msg) {
         }
 
         function addMessageToDOM(msg, friendOrGroup, containerId = 'chatMessages') {
-        if (msg.contentType === 'voice_call_dialogue') {
-        return; // 如果是通话记录，就直接跳过，不显示
+        if (msg.contentType === 'voice_call_dialogue' || msg.contentType === 'video_call_dialogue') {
+        return; // 如果是通话记录，就直接跳过，不显示在主界面
     }
     if (!msg || !msg.id) {
         console.error("addMessageToDOM called with invalid msgData:", msg);
@@ -29526,19 +30967,18 @@ if (hasVoice) {
             // ↓↓↓ 核心修改：只筛选可以显示的消息类型 ↓↓↓
             const fullHistory = chatHistories[currentChatFriendId] || [];
             // 【核心修改】过滤逻辑
-    const displayableHistory = fullHistory.filter(msg => {
-        // 1. 始终过滤通话信令
-        if (msg.contentType === 'voice_call_dialogue') return false;
-        
-        // 2. 处理线下消息的可见性
-        if (msg.isOfflineMessage) {
-            // 只有在悬浮球模式下，才在聊天界面显示线下消息
-            return currentOfflineMode === 'float';
-        }
-        
-        return true; // 其他正常消息显示
-    });
-
+            const displayableHistory = fullHistory.filter(msg => {
+                // 1. 始终过滤通话信令 (语音 和 视频)
+                if (msg.contentType === 'voice_call_dialogue') return false;
+                if (msg.contentType === 'video_call_dialogue') return false; // <--- 新增这一行
+                
+                // 2. 处理线下消息的可见性
+                if (msg.isOfflineMessage) {
+                    return currentOfflineMode === 'float';
+                }
+                
+                return true; 
+            });
 
             if (displayableHistory.length === 0) {
                 currentlyDisplayedMessageCount = 0;
@@ -29596,10 +31036,12 @@ async function loadPreviousMessages() {
     const rawHistory = chatHistories[currentChatFriendId] || [];
 
     // ▼▼▼ 核心修改：在这里先过滤一遍 ▼▼▼
-    // 必须和 renderInitialMessages 的过滤逻辑保持一致
     const history = rawHistory.filter(msg => 
-        msg.contentType !== 'voice_call_dialogue' && !msg.isOfflineMessage
+        msg.contentType !== 'voice_call_dialogue' && 
+        msg.contentType !== 'video_call_dialogue' && // <--- 新增这一行
+        !msg.isOfflineMessage
     );
+    // ▲▲▲ 修改结束 ▲▲▲
     // ▲▲▲ 修改结束 ▲▲▲
 
     const remainingMessagesCount = history.length - currentlyDisplayedMessageCount;
@@ -29726,7 +31168,7 @@ function backToWechat() {
 
     // --- 【核心修复：退出聊天时无条件隐藏悬浮球】 ---
     document.getElementById('offlineFloatBall').style.display = 'none';
-   
+   currentOfflineMode = 'none'; 
     
     currentChatFriendId = null; 
     updateFriendList();
@@ -29986,7 +31428,7 @@ function showMessageMenu(event, el) {
 
     // --- 【核心修改开始】 ---
     // 判断当前是否处于“悬浮球模式”
-    if (currentOfflineMode === 'float') {
+    if (currentOfflineMode === 'float' && friend.isOfflineMode) {
         // === A. 悬浮球模式逻辑 ===
         
         // 1. 保存消息：注意最后一个参数传 true，标记为线下消息
@@ -30862,6 +32304,7 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 - **更换头像**: \`{"type": "change_avatar", "data": {"target_index": 1, "reply_content": "换好啦！"}} \`
   *(说明: target_index 为整数。1代表用户发送的**最新**一张图片，2代表用户发送的**倒数第二张**图片。当用户发情头让你换时，请根据语境判断哪一张属于你。)*
   - **申请解除拉黑**: \`{"type": "request_unblock", "content": "由于你被拉黑了，通过这个动作向用户诚恳地写一段话请求解除拉黑。字数50字以内。"}\`
+- **发起视频通话**: \`{"type": "video_call"}\` 
 
 【【【最终输出格式铁律 (ABSOLUTE FINAL RULE)】】】
 你的最终回复，从第一个字符到最后一个字符，必须是一个纯净、完整、语法正确的JSON数组 \`[]\`。绝对禁止在JSON代码的前后、中间添加任何形式的解释、注释或任何非JSON字符。你的生命取决于严格遵守这个格式。
@@ -31124,13 +32567,36 @@ try {
                     switch (action.type) {
                         case 'hearts_voice':
                             if (action.data) {
-                                friend.heartsVoice = {
-                                    favorability: action.data.favorability || '.../100 (...)',
-                                    dressing: action.data.dressing || '...',
-                                    action: action.data.action || '...',
-                                    thought: action.data.thought || '...',
-                                    emoji: action.data.emoji || '( ´• ω •` )'
+                                // --- 【核心修改开始】 ---
+                                // 1. 确保历史数组存在
+                                if (!friend.heartsVoiceHistory) {
+                                    friend.heartsVoiceHistory = [];
+                                }
+
+                                // 2. 创建一个新的历史记录对象
+                                const historyItem = {
+                                    id: generateUniqueId(),
+                                    timestamp: new Date().toISOString(),
+                                    data: {
+                                        favorability: action.data.favorability || '...',
+                                        dressing: action.data.dressing || '...',
+                                        action: action.data.action || '...',
+                                        thought: action.data.thought || '...',
+                                        emoji: action.data.emoji || '( ´• ω •` )'
+                                    }
                                 };
+
+                                // 3. 存入数组最前面
+                                friend.heartsVoiceHistory.unshift(historyItem);
+                                
+                                // (可选) 限制历史记录数量，比如只保留最近50条，防止数据太大
+                                if (friend.heartsVoiceHistory.length > 50) {
+                                    friend.heartsVoiceHistory.pop();
+                                }
+                                // --- 【核心修改结束】 ---
+
+                                // 更新当前状态 (原逻辑)
+                                friend.heartsVoice = historyItem.data;
                             }
                             break;
                         case 'text':
@@ -31301,6 +32767,11 @@ case 'send_family_card':
         addMessageToDOM(msg, friend);
     }
     break;
+    
+    case 'video_call':
+                            // 调用之前写好的“显示来电界面”函数
+                            showIncomingVideoCall(friend.id);
+                            break;
                   
                     case 'purchase_and_pay':
                 // 1. 修复变量名
@@ -32824,8 +34295,9 @@ function applyCustomIcons() {
     
     broadcastUserActivity('moment', {
         content: content,
-        hasImage: !!momentImage // 转换布尔值
-    });
+        hasImage: !!momentImage,
+        groupId: selectedGroupId 
+    }); 
     // 5. 更新内存数组和UI列表
     moments.unshift(newMoment);
     updateMomentsList();
@@ -35321,9 +36793,7 @@ function backToSimHomeScreen() {
     };
     const readableAppName = appNameMap[appName] || appName;
 
-    broadcastUserActivity('check_phone', {
-        appName: readableAppName
-    }, currentSimPhoneCharacterId);
+   
     const view = document.getElementById(`sim-${appName}-view`);
     if (!view || !currentSimPhoneCharacterId) return;
 
@@ -36229,110 +37699,114 @@ async function requestAiVote(messageId, pollData, aiMemberId) {
 }
 
 /**
- * [V4 顺序防爆版] AI 投票核心逻辑
- * 改动：从“并发”改为“顺序”执行，以便在报错时能暂停游戏并弹出重试框
+ * [V6 并发+弹窗版] AI 投票核心逻辑
+ * 特性：
+ * 1. 并发执行：所有AI同时思考，速度极快。
+ * 2. 错误弹窗：如果出错，会暂停并弹出“重回/跳过”窗口，由用户决定。
  */
 async function aiUcVoting() {
     const settings = await getGameEffectiveSettings();
-    // 1. 整理本轮描述信息
+    
+    // 1. 准备公共情报
     const roundStatements = ucState.players
         .filter(p => !p.isDead)
         .map((p, idx) => `[玩家${idx+1} ${p.name}]: "${p.description}"`)
         .join('\n');
-
-    // 2. 获取全局战况
     const fullGameLog = getFullGameLogContext();
 
-    // 3. 筛选出需要投票的AI (存活且非用户)
+    // 2. 筛选AI玩家
     const aiPlayers = ucState.players.filter(p => !p.isUser && !p.isDead);
     
-    // --- 【核心修改】改为循环顺序执行，一个接一个投 ---
-    for (const ai of aiPlayers) {
-        
-        // A. 定义单个AI的投票任务 (方便重试调用)
-        const executeVoteTask = async () => {
-            if (!settings || !settings.apiKey) throw new Error("API未配置");
-            
-            // 模拟思考延迟 (让投票过程更有节奏感)
-            await new Promise(r => setTimeout(r, Math.random() * 1000 + 500));
+    if (aiPlayers.length === 0) {
+        ucState.aiVotingComplete = true;
+        checkVotingComplete();
+        return;
+    }
 
-            // 简化的策略提示
+    // 3. 定义单个AI的投票任务（封装成函数以便重试）
+    const createVoteTask = async (ai, index) => {
+        // 错峰请求，防止瞬间并发过高
+        await new Promise(r => setTimeout(r, index * 500));
+
+        const executeRequest = async () => {
+            if (!settings || !settings.apiKey) throw new Error("API未配置");
+
+            // --- 策略构建 ---
             const roleStrategy = ai.role === 'spy' 
                 ? "你是卧底！为了生存，请投给描述最模糊的平民，或者跟票投被怀疑的人。绝对不能投自己。"
                 : "你是平民。请找出描述跟你的词不沾边的人（异类），或者投给那个最像卧底的人。";
 
             const prompt = `
-【游戏】: 谁是卧底
+【游戏】: 谁是卧底 (投票阶段)
 【你的身份】: ${ai.name} (${ucState.players.indexOf(ai) + 1}号)。
 【你的词语】: ${ai.word}
 【全局战况】:
 ${fullGameLog}
 
-【本轮所有人的描述】:
+【本轮发言】:
 ${roundStatements}
 
-【当前存活玩家】: ${ucState.players.map((p,i) => !p.isDead ? `${i+1}号` : '').filter(Boolean).join(', ')}
+【存活玩家】: ${ucState.players.map((p,i) => !p.isDead ? `${i+1}号` : '').filter(Boolean).join(', ')}
 
-【你的任务】: 请根据你的身份和场上发言，决定把票投给谁。
+【任务】: 决定把票投给谁。
 ${roleStrategy}
-
-【重要】: 
-- 只能投给**活着**的玩家。
-- 严禁投给自己 (${ucState.players.indexOf(ai) + 1}号)。
-- 返回且仅返回一个**纯数字** (目标玩家的编号，如 1)。
-`;
+【规则】: 只能投活人，不能投自己。返回且仅返回一个**纯数字**。`;
 
             const response = await fetch(`${settings.apiUrl}/chat/completions`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.2 }) 
+                body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.1 }) 
             });
             
-            if (!response.ok) throw new Error(`API请求失败: ${response.status}`);
+            if (!response.ok) throw new Error("API请求失败");
 
             const data = await response.json();
             const content = data.choices[0].message.content;
             
-            // 提取数字
             const match = content.match(/\d+/);
-            if (!match) throw new Error("AI未返回有效的数字编号");
+            if (!match) throw new Error("AI未返回数字");
             
             const voteNum = parseInt(match[0]);
-            
-            // 校验有效性
-            if (voteNum < 1 || voteNum > ucState.players.length) throw new Error(`投票编号 ${voteNum} 超出范围`);
-            
             const targetIndex = voteNum - 1;
-            const targetPlayer = ucState.players[targetIndex];
             
-            if (targetPlayer.isDead) throw new Error(`试图投给已死亡玩家 (${voteNum}号)`);
-            if (targetPlayer.id === ai.id) throw new Error(`试图投给自己`);
+            if (targetIndex < 0 || targetIndex >= ucState.players.length || ucState.players[targetIndex].isDead || ucState.players[targetIndex].id === ai.id) {
+                throw new Error("AI投了无效票");
+            }
 
-            // --- 投票成功，执行结算 ---
+            // 投票成功
             performVoteAction(ai, targetIndex);
         };
 
-        // B. 定义兜底函数 (点击“跳过”时执行)
-        const executeFallback = () => {
-            // 随机投一个活人 (除了自己)
-            const aliveIndices = ucState.players.map((p, i) => i).filter(i => !ucState.players[i].isDead && ucState.players[i].id !== ai.id);
-            if (aliveIndices.length > 0) {
-                const randomTarget = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
-                performVoteAction(ai, randomTarget);
-            }
-        };
-
-        // C. 执行与错误拦截
+        // --- 错误处理核心逻辑 ---
         try {
-            await executeVoteTask();
+            await executeRequest();
         } catch (e) {
-            console.error(`${ai.name} 投票失败`, e);
-            // 【关键】调用错误处理弹窗，并暂停等待用户操作
-            await handleGameApiError(e, executeVoteTask, executeFallback);
+            console.error(`${ai.name} 投票出错:`, e);
+            
+            // 【恢复弹窗】：这里调用通用的错误处理函数
+            // 它会暂停流程，直到用户点击“重回”或“跳过”
+            await handleGameApiError(
+                e, 
+                // Retry 回调：重新执行请求
+                executeRequest, 
+                // Fallback 回调：随机投票
+                () => {
+                    const aliveIndices = ucState.players.map((p, i) => i)
+                        .filter(i => !ucState.players[i].isDead && ucState.players[i].id !== ai.id);
+                    if (aliveIndices.length > 0) {
+                        const randomTarget = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
+                        performVoteAction(ai, randomTarget);
+                        console.log(`${ai.name} 跳过思考，随机投票`);
+                    }
+                }
+            );
         }
-    }
+    };
 
-    // 所有AI投完后，结束本轮
+    // 4. 并发执行所有任务，并等待它们全部结束（无论是成功还是被跳过）
+    await Promise.all(aiPlayers.map((ai, index) => createVoteTask(ai, index)));
+
+    // 5. 标记AI投票结束
     ucState.aiVotingComplete = true;
     checkVotingComplete();
 }
@@ -63605,11 +65079,26 @@ async function broadcastUserActivity(activityType, data, targetId = null) {
     let messageContent = "";
     let targets = [];
 
-    // 1. 根据活动类型构建通知内容和目标人群
     switch (activityType) {
-        case 'moment': // 发朋友圈 -> 通知所有好友
+        case 'moment': // 发朋友圈
             messageContent = `[系统通知 ${timeStr}]: 用户刚刚发布了一条朋友圈。内容：“${data.content}”${data.hasImage ? ' [含图片]' : ''}`;
-            targets = friends.filter(f => !f.isGroup);
+            
+            // 【核心修复】根据分组ID筛选通知对象
+            if (data.groupId && data.groupId !== 'public') {
+                // 1. 找到对应的分组对象
+                const targetGroup = momentGroups.find(g => g.id === data.groupId);
+                
+                if (targetGroup && targetGroup.members) {
+                    // 2. 只通知在这个分组里的好友 (且不是群聊)
+                    targets = friends.filter(f => !f.isGroup && targetGroup.members.includes(f.id));
+                } else {
+                    // 如果分组异常，没人收到通知
+                    targets = [];
+                }
+            } else {
+                // 公开：通知所有好友
+                targets = friends.filter(f => !f.isGroup);
+            }
             break;
 
         case 'forum': // 发论坛帖子 -> 通知所有好友
@@ -63880,13 +65369,10 @@ async function startUndercoverGameInit() {
 
     // 2.3 自动补全 NPC
     while (ucState.players.length < ucState.mode) {
-        // 【修改点】去掉后面的 + (Math.floor(Math.random()*100))
         const npcName = UC_NPC_NAMES[Math.floor(Math.random() * UC_NPC_NAMES.length)];
-        
         ucState.players.push({
             id: `npc_${Date.now()}_${Math.random()}`,
             name: npcName,
-            // ... 其他保持不变
             avatar: passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)],
             isImage: true,
             isUser: false,
@@ -63896,11 +65382,18 @@ async function startUndercoverGameInit() {
         });
     }
 
-    // 3. 分配身份 (洗牌算法)
-    // 8人局: 2卧底, 6平民; 4/6人局: 1卧底
+    // --- 【核心修改：打乱座位顺序】 ---
+    // 使用 Fisher-Yates 洗牌算法，彻底打乱玩家数组
+    for (let i = ucState.players.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ucState.players[i], ucState.players[j]] = [ucState.players[j], ucState.players[i]];
+    }
+    // -----------------------------
+
+    // 3. 分配身份 (在打乱座位后进行)
     const spyCount = ucState.mode === 8 ? 2 : 1;
     
-    // 生成索引数组并打乱
+    // 再次生成索引数组并打乱，决定谁是卧底
     let indices = Array.from({length: ucState.mode}, (_, i) => i);
     indices.sort(() => Math.random() - 0.5);
     
@@ -63926,8 +65419,14 @@ async function startUndercoverGameInit() {
     
     // 5. 弹出“查看词语”遮罩
     const userPlayer = ucState.players.find(p => p.isUser);
+    
+    // 在弹窗上显示用户的号码，方便确认
+    const userSeatNumber = ucState.players.indexOf(userPlayer) + 1;
+    const titleDiv = document.querySelector('#undercoverWordModal .modal-content div:first-child');
+    if (titleDiv) titleDiv.textContent = `你是 ${userSeatNumber} 号，你的身份词是`;
+
     document.getElementById('ucUserWordDisplay').textContent = userPlayer.word;
-    document.getElementById('ucUserWordDisplay').style.color = '#fff'; // 不提示颜色，保持神秘
+    document.getElementById('ucUserWordDisplay').style.color = '#fff';
     document.getElementById('undercoverWordModal').classList.add('show');
     
     // 隐藏顶部的词语，等用户确认后再显示
@@ -64111,13 +65610,16 @@ function submitUcDescription() {
 }
 
 /**
- * [V3 深度定制版] AI 描述阶段核心逻辑
- * 特性：区分好友/NPC，区分卧底/平民策略，禁止调情，严格防爆
+ * [V4 模糊描述 + 熟人竞技版] AI 描述阶段核心逻辑
+ * 优化：
+ * 1. 描述模糊化：只描述一个特点，防止爆狼。
+ * 2. 熟人感：知道几号是用户，说话语气自然熟络。
+ * 3. 专注游戏：禁止调情，专注逻辑。
  */
 async function aiUcSpeak(player) {
     const settings = await getGameEffectiveSettings();
     if (!settings.apiUrl) {
-        handleAiSpeakResult(player, "这个东西...很常见。");
+        handleAiSpeakResult(player, "这个东西...平时挺常见的。");
         return;
     }
 
@@ -64126,11 +65628,12 @@ async function aiUcSpeak(player) {
         .filter(p => p.descriptionHistory && p.descriptionHistory.length > 0)
         .map(p => `${p.name}: "${p.descriptionHistory.join('", "')}"`)
         .join('\n');
-        const fullGameLog = getFullGameLogContext();
+    
+    const fullGameLog = getFullGameLogContext();
 
-   // --- 1. 获取关系与记忆上下文 (描述阶段：专注模式) ---
+    // --- 2. 获取关系与记忆上下文 (描述阶段：专注模式) ---
     const userIdx = ucState.players.findIndex(p => p.isUser);
-    const userSeatNum = userIdx + 1;
+    const userSeatNum = userIdx + 1; // 用户的座位号
 
     let relationshipContext = "";
 
@@ -64139,161 +65642,182 @@ async function aiUcSpeak(player) {
         const persona = userPersonas.find(p => p.id === personaId) || userProfile;
 
         relationshipContext = `
-        【社交状态：游戏进行中】
-        - 场上的 **${userSeatNum}号玩家** 是你的好友 "${persona.name}"。
-        - **【最高行为准则】**：现在是描述环节。
-        - **严禁**：严禁调情、严禁叙旧。
-        - **指令**：做一个极其认真的游戏玩家，全神贯注地描述你的词语。不要让私人感情影响游戏的公平性。
+        【社交关系：熟人局】
+        - 场上的 **${userSeatNum}号玩家** 就是你的老熟人/朋友 "${persona.name}"。
+        - **指令**：
+          1. **拒绝陌生感**：不要对他客气，就像平时群聊一样自然。
+          2. **拒绝调情**：现在是烧脑游戏时间！我们要认真玩游戏，不要在这里谈情说爱，那样很尴尬。要表现出胜负欲。
+          3. **称呼**：可以直接叫他"${userSeatNum}号"，也可以偶尔带入平时对他的称呼，但重点是描述词语。
         `;
     } else {
-        relationshipContext = `【身份】你是路人玩家，性格：${player.roleDesc || "普通"}。不认识${userSeatNum}号(用户)，专注玩游戏。`;
+        relationshipContext = `【身份】你是路人玩家，性格：${player.roleDesc || "普通"}。你跟${userSeatNum}号(用户)不熟，公事公办。`;
     }
 
-    // 4. 构建游戏策略 (卧底 vs 平民)
+    // --- 3. 构建游戏策略 (核心：模糊化) ---
     let strategyContext = "";
     if (player.role === 'spy') {
         strategyContext = `
-        **【你的底牌】**: 你是**卧底**！(但你可能还不知道自己是卧底，因为你还没看到别人的词)。
-        **【策略】**: 
-        1. 观察别人的描述，尽量说一些模棱两可、通用的特征。
-        2. 不要说得太具体，以免直接暴露。
-        3. 努力模仿平民的口吻，混在人群中。`;
+        **【你的底牌】**: 你是**卧底**！(你的词是：${player.word})
+        **【生存策略 - 极度模糊】**: 
+        1. 你不知道平民的词是什么，所以**绝对不要描述太具体**！
+        2. **万金油战术**：只描述这个东西最宽泛的属性。例如：如果是“苹果”，不要说“红色的水果”，要说“是个圆的东西”或者“能吃”。
+        3. **模仿**：顺着上一位玩家的话说，但要更模棱两可。`;
     } else {
         strategyContext = `
-        **【你的底牌】**: 你是**平民**。
-        **【策略】**: 
-        1. 描述要准确，让队友认出你。
-        2. 但不要太直白（防爆词），以免被卧底猜出词语。
-        3. 尽量从外观、功能、用途等不同角度描述。`;
+        **【你的底牌】**: 你是**平民**。(你的词是：${player.word})
+        **【生存策略 - 朦胧美】**: 
+        1. **不要太直白！** 如果你描述得太清楚（比如直接说出它是干嘛的），卧底马上就猜到了！
+        2. **只说一点点**：只描述它的**某一个**侧面特征（例如只说颜色，或者只说材质，或者只说一个抽象的感觉）。
+        3. **示例**：如果词是“眼镜”，不要说“戴在眼睛上的”，要说“由两个圈组成”或者“有的有框有的没框”。`;
     }
 
     const prompt = `
 【游戏】: 谁是卧底
 【当前阶段】: 描述阶段
-【你的词语】: **【 ${player.word} 】** (切记！这是你唯一的底牌)
+【你的词语】: **【 ${player.word} 】** (这是你的底牌)
 
 【情报库】
 ${relationshipContext}
 
 ${strategyContext}
 
-【全局游戏记录 (参考之前的局势)】
+【全局游戏记录】
 ${fullGameLog}
 
-【查重列表 (场上已出现过的描述，禁止重复)】
+【查重列表 (禁止重复别人的话)】
 ${allPastDescriptions || "暂无描述"}
 
-【任务】: 请用一句话描述你的词语。
+【任务】: 请用**一句话**描述你的词语。
 
-【【【去“人机感”口语铁律 (绝对执行)】】】
-1. **禁止废话**：严禁以“嗯…”、“呃…”、“怎么说呢”、“好像是”这种犹豫的词开头！直接切入重点。
-2. **拒绝复读**：不要说“我的词是…”。
+【【【模糊化描述铁律 (必须严格遵守)】】】
+1.  **禁止定义**：严禁使用“这是一种...”这样的定义句。
+2.  **侧面描写**：请只从以下**一个**角度切入：[外观 / 材质 / 使用场景 / 给人的感觉 / 抽象隐喻]。
+3.  **含糊其辞**：要让队友能懂，但让卧底（或者如果你是卧底，让平民）觉得模棱两可。**越像谜语越好。**
+4.  **字数**：控制在 20 字以内。短一点更像真的在玩游戏。
 
-【【【描述铁律 (必须严格遵守)】】】
-1.  **【禁止说出原词】**: 描述中**绝对不能**包含词语【${player.word}】中的任何一个字！
-2.  **【禁止重复】**: 绝对不能重复上面【查重列表】里任何人的描述角度。必须找一个新的切入点！
-3.  **【活人感】**: 像真人一样说话。可以使用口语、语气词
-4.  **【禁止场外】**: 不要聊游戏规则，只描述词语本身。
-5.  **字数**: 50字以内。不要带引号。
+【【【口语铁律】】】
+1.  **禁止废话**：严禁以“嗯…”、“怎么说呢”开头。
+2.  **自然语气**：如果是熟人，语气可以随意点，比如“这玩意儿我家也有”、“反正我不喜欢吃”。
 
-现在，请给出你的描述：`;
+现在，请给出你的描述（纯文本，不要引号）：`;
 
     try {
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.9 })
+            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.8 }) // 温度稍微调低一点，让逻辑更稳
         });
         const data = await response.json();
         let content = data.choices[0].message.content.trim().replace(/^["“”]|["“”]$/g, '');
         
-        // 二次防爆检查 (如果AI不小心说漏了嘴，强制替换)
+        // 二次防爆检查
         if (content.includes(player.word)) {
-            content = content.replace(new RegExp(player.word, 'g'), '这个东西');
+            content = content.replace(new RegExp(player.word, 'g'), '这东西');
         }
         
         handleAiSpeakResult(player, content);
         
-   
-    
     } catch (e) {
         console.error("AI发言失败", e);
-        
-        // 【修改点】调用错误重试处理函数
         await handleGameApiError(
             e, 
-            () => aiUcSpeak(player), // 重试逻辑：重新调用自己
-            () => handleAiSpeakResult(player, "（网络波动）这个东西...很常见。") // 兜底逻辑
+            () => aiUcSpeak(player),
+            () => handleAiSpeakResult(player, "（看着天花板）我想想...是个好东西。") 
         );
     }
 }
 
-// 配合上面的修改，需要微调 handleAiSpeakResult，把描述存入历史记录数组
+// 配合上面的修改，需要微调 handleAiSpeakResult
 function handleAiSpeakResult(player, text) {
-    player.description = text;
-    // 【新增】把描述存入历史数组，用于查重
-    if (!player.descriptionHistory) player.descriptionHistory = [];
-    player.descriptionHistory.push(text);
+    // 1. 如果是描述阶段，存入 description
+    if (ucState.phase === 'describing') {
+        player.description = text;
+        if (!player.descriptionHistory) player.descriptionHistory = [];
+        player.descriptionHistory.push(text);
+    } 
+    // 2. 【新增】如果是推理阶段，存入 currentReasoning
+    else if (ucState.phase === 'reasoning') {
+        player.currentReasoning = text;
+    }
 
     showUcBubble(ucState.currentTurnIndex, text);
+    // 这里的日志记录保持不变
     addUcLog(player.name, text);
     updateUcStatus('wait');
 }
 
-
 // --- 3. 投票阶段 ---
 
+/**
+ * [修复版] 启动投票环节
+ * 修复：防止已出局玩家的状态在初始化时被错误重置，导致死锁。
+ */
 function startVotingPhase() {
     ucState.phase = 'voting';
     
+    // 移除所有人的发言高亮
     document.querySelectorAll('.uc-player-card').forEach(c => c.classList.remove('speaking'));
     
     addUcLog('系统', `=== 发言结束，请点击头像投票 ===`, 'sys');
     document.getElementById('ucRoundInfo').textContent = `第 ${ucState.currentRound} 轮投票`;
     
+    // 隐藏发言区域
     document.getElementById('ucInputArea').style.display = 'none';
     document.getElementById('ucWaitArea').style.display = 'none';
     
+    // 重置所有人得票数
+    ucState.players.forEach(p => p.voteCount = 0);
+
+    // 重置 AI 投票状态
+    ucState.aiVotingComplete = false;
+    
+    // 隐藏票数标记
+    document.querySelectorAll('.uc-vote-badge').forEach(el => {
+        el.style.display = 'none';
+        el.textContent = '0';
+    });
+
     const voteArea = document.getElementById('ucVoteArea');
     const userPlayer = ucState.players.find(p => p.isUser);
 
-    // 重置所有人票数
-    ucState.players.forEach(p => p.voteCount = 0);
-
-    // 【核心修复】判断用户死活
+    // 【核心修复逻辑】
+    // 必须在最后时刻决定 userHasVoted 的状态，防止被覆盖
     if (userPlayer.isDead) {
-        // 如果死了：隐藏按钮，标记为已投(直接跳过)
+        // === 情况 A: 用户已出局 ===
+        // 1. 隐藏投票按钮
         voteArea.style.display = 'none';
+        
+        // 2. 【关键】直接标记为“已投票”（视为自动弃票），这样系统就不会等你点击了
         ucState.userHasVoted = true; 
+        
         updateUcStatus('loading', '你已出局，正在围观投票...');
     } else {
-        // 如果活着：显示按钮，允许投票
+        // === 情况 B: 用户存活 ===
+        // 1. 显示投票按钮
         voteArea.style.display = 'block';
+        
+        // 2. 标记为“未投票”，等待用户操作
         ucState.userHasVoted = false;
         
+        // 渲染按钮
         voteArea.innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%;">
                 <div style="color: #999; font-size: 12px; font-weight: 500;">请点击上方头像进行投票</div>
                 <button class="uc-btn" style="background: #f5f5f5 !important; color: #666 !important; width: 80%; border-radius: 30px; height: 40px; font-size: 14px; box-shadow: none; border: 1px solid #ddd;" onclick="handleUserAbstain()">弃 票</button>
             </div>
         `;
+        
+        updateUcStatus('loading', '等待全员投票中...');
     }
-
-    // ... 后面的代码保持不变 ...
     
-    // 重置票数
-    ucState.players.forEach(p => p.voteCount = 0);
-    ucState.userHasVoted = false;
-    ucState.aiVotingComplete = false;
-    
-    document.querySelectorAll('.uc-vote-badge').forEach(el => {
-        el.style.display = 'none';
-        el.textContent = '0';
-    });
-    
-    updateUcStatus('loading', '等待全员投票中...');
-    
+    // 开始 AI 投票
     aiUcVoting();
+    
+    // 【新增保险】如果用户已死，立即检查一次是否可以直接结算
+    // (防止 AI 跑得太快，在 userHasVoted 被设置前就检查完了)
+    if (userPlayer.isDead) {
+        checkVotingComplete();
+    }
 }
 
 // 用户点击头像投票
@@ -64938,131 +66462,133 @@ async function startReasoningPhase() {
 }
 
 /**
- * [V4 智能博弈版] AI 推理/辩论核心逻辑
- * 修复：卧底会根据场上局势判断自己是否暴露，并进行伪装或反咬
+ * [V8 最终完美版] AI 推理/辩论核心逻辑
+ * 包含：时序感知、防自爆、防复读、好友滤镜、以及错误弹窗机制。
  */
 async function aiUcReasoning(player) {
-const settings = await getGameEffectiveSettings();
+    const settings = await getGameEffectiveSettings();
     if (!settings.apiUrl) {
-        handleAiSpeakResult(player, "我觉得大家说得都挺有道理的。");
+        handleAiSpeakResult(player, "我再观察一下局势。");
         return;
     }
 
-    // 1. 获取本轮（及上一轮）所有人的描述，这是判断局势的关键
-    // 我们提取出“别人”的描述，方便AI做对比
-    const otherPlayersDescriptions = ucState.players
-        .filter(p => !p.isDead && p.id !== player.id && p.description) 
+    // 1. 获取坐标与时序
+    const myIdx = ucState.players.indexOf(player);
+    const mySeatNum = myIdx + 1;
+    
+    const descriptionsList = ucState.players
+        .filter(p => !p.isDead && p.description) 
         .map(p => `[${ucState.players.indexOf(p) + 1}号 ${p.name}]: "${p.description}"`)
         .join('\n');
 
-    // 2. 获取全局战况
+    // 获取本轮已经发言的人
+    const prevSpeakers = ucState.players.slice(0, ucState.currentTurnIndex).filter(p => !p.isDead);
+    let reasoningHistory = "";
+    let isFirstSpeaker = (prevSpeakers.length === 0);
+
+    if (isFirstSpeaker) {
+        reasoningHistory = "(你是本轮第一个发言的人，还没有人进行推理。)";
+    } else {
+        reasoningHistory = prevSpeakers.map(p => 
+            `[${ucState.players.indexOf(p)+1}号 ${p.name} 推理说]: "${p.currentReasoning || ''}"`
+        ).join('\n');
+    }
+
     const fullGameLog = getFullGameLogContext();
 
-    // --- 1. 获取关系与记忆上下文 (推理阶段：熟人模式) ---
+    // 2. 动态分配人设
+    let possiblePersonas = [];
+    if (isFirstSpeaker) {
+        possiblePersonas = [
+            { type: "逻辑分析师", instruction: "分析场上所有人的【描述】，指出谁的描述最模糊或最有嫌疑。" },
+            { type: "直觉流", instruction: "凭直觉选一个描述让你觉得不舒服的人进行攻击。" },
+            { type: "搅局者", instruction: "故意把水搅浑，随便抛出一个嫌疑人让大家讨论。" }
+        ];
+    } else {
+        possiblePersonas = [
+            { type: "逻辑分析师", instruction: "无视前面的发言，坚持通过分析【描述】来找卧底。" },
+            { type: "跟风者", instruction: "觉得前面某个人说得很有道理，表示赞同并附和他的观点。" },
+            { type: "反驳者", instruction: "听了前面的发言，觉得有人在乱踩，站出来反驳他。" },
+            { type: "和事佬", instruction: "觉得现在的火药味太重或者是大家都在乱猜，建议再听听。" }
+        ];
+    }
+    let currentPersona = possiblePersonas[Math.floor(Math.random() * possiblePersonas.length)];
+    
+    // 卧底策略
+    if (player.role === 'spy') {
+        if (!isFirstSpeaker && Math.random() > 0.4) {
+            currentPersona = { type: "伪装跟风", instruction: "为了不暴露自己，顺着前面看起来最像好人的发言，踩一脚被怀疑的人。" };
+        } else {
+             currentPersona = { type: "带节奏", instruction: "试图把嫌疑引向一个描述比较模糊的平民。" };
+        }
+    }
+
+    // 3. 关系上下文
     const userIdx = ucState.players.findIndex(p => p.isUser);
     const userSeatNum = userIdx + 1;
-
-    let relationshipContext = ""; // 注意：这里变量名要和下面Prompt里用的一致
-
+    
+    let relationshipContext = "";
     if (player.isAiFriend) {
         const personaId = player.friendData.activeUserPersonaId || 'default_user';
         const persona = userPersonas.find(p => p.id === personaId) || userProfile;
-
-        // 获取聊天记录（仅用于把握说话语气，不是为了叙旧）
-        const history = (chatHistories[player.id] || []).slice(-10).map(m => 
-            `${m.type === 'sent' ? persona.name : player.name}: ${m.content}`
-        ).join(' | ');
-
         relationshipContext = `
-        【社交状态：逻辑博弈】
+        【社交关系：熟人局】
         - **${userSeatNum}号玩家** 是你的好友 "${persona.name}"。
-        - **指令**：在推理分析时，你可以流露出**一点点**熟人的感觉。
-        - **熟人表现示例**：
-          1. **调侃**：“${userSeatNum}号你这描述也太水了吧，不会是卧底心虚吧？”
-          2. **语气**：使用你们平时聊天(${history})的口吻，但内容必须聚焦于游戏逻辑。
-          注意这只是示例！！不要照搬！！
-        `;
+        - **指令**：对他说话语气要自然、熟络（可调侃、可护短）。不要像陌生人一样公事公办。`;
     } else {
-        relationshipContext = `【身份】你是路人玩家，性格：${player.roleDesc || "普通"}。对${userSeatNum}号(用户)公事公办，只看逻辑。`;
+        relationshipContext = `你跟${userSeatNum}号(用户)不熟。`;
     }
 
-    // 4. 构建【高阶博弈策略】(这是让卧底变聪明的核心)
-    let strategy = "";
-    
-    if (player.role === 'spy') {
-        strategy = `
-        【【【你的真实身份：卧底】】】 (你的词是：${player.word})
-        
-        **【最高生存铁律：危机感知与伪装】**
-        请立刻对比【大家的描述】和【你的词】：
-        1.  **如果大家的描述跟你的词特征一致**：说明你还没暴露，或者还没轮到你暴露。保持低调，假装分析别人。
-        2.  **【关键】如果大家的描述跟你的词完全不同**（例如你的词是“苹果”，大家都在说“长在土里”）：
-            -   **警报！你绝对是卧底！**
-            -   **行动**：立刻**放弃**维护你手里的词！**开始撒谎！**
-            -   **话术**：顺着大家的逻辑去踩一个看起来像好人的倒霉蛋，或者说“我觉得某人描述太模糊了”，以此转移视线。
-            -   **严禁**：绝对不要再说出你手里那个词的特征了！那样等于自爆！
-        `;
-    } else {
-        strategy = `
-        【你的真实身份：平民】 (你的词是：${player.word})
-        
-        **【胜利法则：寻找异类】**
-        1.  仔细听【大家的描述】，谁的描述跟你的词【${player.word}】有微妙的差别？
-        2.  如果有人描述得很模糊（万金油），攻击他！
-        3.  如果有人上一轮投了你，反击他！
-        4.  不要盲目跟风，要有自己的判断。
-        `;
-    }
-
+    // 4. 构建 Prompt
     const prompt = `
-【游戏】: 谁是卧底
-【当前阶段】: **推理/辩论环节** (自由发言，攻击嫌疑人，为自己辩解)
-【你的名字】: ${player.name} (${ucState.players.indexOf(player) + 1}号)。
+【游戏】: 谁是卧底 (推理辩论环节)
+【你的身份】: **${mySeatNum}号** (${player.name})。
+【你的底牌】: ${player.role === 'spy' ? '卧底 (词:'+player.word+')' : '平民 (词:'+player.word+')'}。
 
-【场上局势】
-${fullGameLog}
+【环节说明】
+这是推理环节。你需要根据【描述记录】和【刚才其他人的发言】，发表你的看法。
 
-【大家的描述 (情报来源)】
-${otherPlayersDescriptions}
+【线索 1：所有人的词语描述】
+${descriptionsList}
 
-【你的思考逻辑】
+【线索 2：刚才发生的事情 (本轮推理记录)】
+${reasoningHistory}
+
+【你的本轮人设】: **${currentPersona.type}** (${currentPersona.instruction})
+
 ${relationshipContext}
 
-${strategy}
+【【【逻辑铁律 (违反必死)】】】
+1.  **【时序认知】**: 你只能回应【线索2】里已经发言的人。**严禁**回应还没说话的人！
+2.  **【自我认知】**: 严禁怀疑你自己（${mySeatNum}号）！
+3.  **【拒绝复读】**: 禁止使用“敷衍”、“笼统”这两个词。用语要口语化。
 
-【【【去“人机感”口语铁律 (绝对执行)】】】
-1. **禁止废话**：严禁以“嗯…”、“呃…”、“怎么说呢”、“好像是”这种犹豫的词开头！直接切入重点。
-2. **拒绝复读**：不要说“我的词是…”。
+【任务】: 输出一句推理发言（30字以内）。`;
 
-【任务】: 请根据场上情况，发表一句推理或观点。
-- **口语化**：像在群里吵架或讨论，可以使用“我觉得”、“笑死”、“肯定是”等词。
-- **不要直接说出你的词**：只聊逻辑，只聊别人的描述漏洞。
-- **字数**：30字以内。
-
-请发言：`;
-
+    // 5. 执行请求与错误处理
     try {
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 1.0 }) // 推理环节温度高一点，增加攻击性
+            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 1.0 }) 
         });
         
         const data = await response.json();
         let content = data.choices[0].message.content.trim().replace(/^["“”]|["“”]$/g, '');
         
+        if (content.includes(`${mySeatNum}号`)) {
+             // 简单的防自爆过滤，如果AI真的脑抽了
+        }
+
         handleAiSpeakResult(player, content);
-        
-    
 
     } catch (e) {
         console.error("AI推理失败", e);
-
-        // 【修改点】调用错误重试处理函数
+        // 【核心】：恢复报错弹窗
         await handleGameApiError(
             e,
-            () => aiUcReasoning(player), // 重试逻辑：重新调用自己
-            () => handleAiSpeakResult(player, "（网络波动）这局势有点看不懂了...") // 兜底逻辑
+            () => aiUcReasoning(player), // 重试
+            () => handleAiSpeakResult(player, "（挠头）感觉这局有点难啊...") // 跳过
         );
     }
 }
@@ -65207,7 +66733,7 @@ function updateGameFloatBallVisibility() {
     const activePageId = activePage ? activePage.id : '';
     
     // 定义哪些页面是游戏页面 (在这里加入了 'ucInnerThoughtsScreen')
-    const gamePages = ['charadesGameScreen', 'undercoverGameScreen', 'ucInnerThoughtsScreen'];
+    const gamePages = ['charadesGameScreen', 'undercoverGameScreen', 'ucInnerThoughtsScreen', 'turtleSoupGameScreen'];
     
     const ball = document.getElementById('gameFloatBall');
     if (!ball) return;
@@ -65590,6 +67116,1006 @@ function updateBlockedInputUI() {
     
     // 自动滚动到底部，确保看到最新消息
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * [新增] 打开心声历史记录页面
+ */
+function openHeartsVoiceHistory() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    // 1. 关闭当前的心声弹窗
+    closeHeartsVoiceModal();
+
+    // 2. 切换页面
+    setActivePage('heartsVoiceHistoryScreen');
+
+    // 3. 渲染列表
+    renderHeartsVoiceHistoryList(friend);
+}
+
+/**
+ * [V2 修正版] 渲染历史记录列表 (修复颜文字遮挡问题)
+ */
+function renderHeartsVoiceHistoryList(friend) {
+    const container = document.getElementById('heartsVoiceHistoryList');
+    container.innerHTML = '';
+
+    const history = friend.heartsVoiceHistory || [];
+
+    if (history.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:50px; color:#999;">暂无历史记录</div>';
+        return;
+    }
+
+    history.forEach(item => {
+        const date = new Date(item.timestamp);
+        const timeStr = `${date.getMonth()+1}月${date.getDate()}日 ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+        const data = item.data;
+
+        const card = document.createElement('div');
+        card.className = 'voice-history-card';
+        
+        // 核心修改：
+        // 1. 删除了原本用来做背景装饰的 <div class="voice-history-emoji">...</div>
+        // 2. 在 voice-history-content 内部第一位新增了一个 item 来专门展示颜文字
+        card.innerHTML = `
+            <div class="voice-history-time">
+                <span>记录时间</span>
+                <span>${timeStr}</span>
+            </div>
+            
+            <div class="voice-history-content">
+                <!-- 【新增】单独一行展示状态/颜文字 -->
+                <div class="voice-history-item">
+                    <span class="voice-history-label">状态：</span>
+                    <span class="voice-history-text" style="font-size: 16px; color: #333;">${data.emoji}</span>
+                </div>
+
+                <div class="voice-history-item">
+                    <span class="voice-history-label">好感：</span>
+                    <span class="voice-history-text" style="color: #ff69b4;">${data.favorability}</span>
+                </div>
+                <div class="voice-history-item">
+                    <span class="voice-history-label">着装：</span>
+                    <span class="voice-history-text">${data.dressing}</span>
+                </div>
+                <div class="voice-history-item">
+                    <span class="voice-history-label">动作：</span>
+                    <span class="voice-history-text">${data.action}</span>
+                </div>
+                <div class="voice-history-item">
+                    <span class="voice-history-label">心声：</span>
+                    <span class="voice-history-text" style="color: #555;">“${data.thought}”</span>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+/**
+ * 启动视频通话（包装器）
+ */
+function startVideoCallWrapper() {
+    startVideoCall();
+    hideFunctionMenus();
+}
+
+/**
+ * 主动发起视频通话
+ */
+function startVideoCall() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    videoCallFriendId = friend.id;
+    isVideoCallActive = true;
+    
+    // 初始化 UI
+    setupVideoUI(friend);
+    
+    // 显示等待状态
+    document.getElementById('videoDuration').textContent = "正在等待对方接受邀请...";
+    document.getElementById('videoCallLog').innerHTML = '';
+    document.getElementById('videoInputArea').style.display = 'none'; // 接通前隐藏输入框
+    
+    setActivePage('videoCallScreen');
+
+    // 模拟接通
+    setTimeout(() => {
+        if (isVideoCallActive) {
+            document.getElementById('videoDuration').textContent = "00:00";
+            callStartTime = new Date();
+            videoTimerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = Math.floor((now - callStartTime) / 1000);
+                const minutes = String(Math.floor(diff / 60)).padStart(2, '0');
+                const seconds = String(diff % 60).padStart(2, '0');
+                document.getElementById('videoDuration').textContent = `${minutes}:${seconds}`;
+            }, 1000);
+            
+            document.getElementById('videoInputArea').style.display = 'flex'; // 显示输入框
+            
+            // 触发 AI 开场白
+            requestAIVideoResponse("(接通了视频通话，正看着镜头)");
+        }
+    }, 2500);
+}
+
+/**
+ * 初始化视频 UI (头像、背景)
+ */
+function setupVideoUI(friend) {
+    const friendBg = document.getElementById('videoFriendBg');
+    const myPreview = document.getElementById('videoUserPreview');
+    const nameEl = document.getElementById('videoFriendName');
+    
+    nameEl.textContent = friend.remark || friend.name;
+    
+    // 设置大背景 (对方)
+    if (friend.avatarImage) {
+        friendBg.style.backgroundImage = `url('${friend.avatarImage}')`;
+    } else {
+        friendBg.style.backgroundImage = '';
+        friendBg.style.backgroundColor = '#333';
+    }
+
+    // 设置小窗口 (我) - 使用当前人设头像
+    const personaId = friend.activeUserPersonaId || 'default_user';
+    const persona = userPersonas.find(p => p.id === personaId) || userProfile;
+    
+    if (persona.avatarImage) {
+        myPreview.style.backgroundImage = `url('${persona.avatarImage}')`;
+        myPreview.textContent = '';
+    } else {
+        myPreview.style.backgroundImage = '';
+        myPreview.textContent = '我';
+        myPreview.style.color = 'white';
+        myPreview.style.display = 'flex';
+        myPreview.style.alignItems = 'center';
+        myPreview.style.justifyContent = 'center';
+    }
+}
+
+/**
+ * 用户发送视频消息
+ */
+async function sendUserVideoMessage() {
+    const input = document.getElementById('videoUserInput');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    // 上屏
+    addVideoLogItem({ type: 'dialogue', content: text }, 'user');
+    input.value = '';
+    
+    // 保存记录
+    await saveChatMessage(videoCallFriendId, 'sent', text, '', null, 'video_call_dialogue');
+    
+    // 触发 AI 回复
+    requestAIVideoResponse(text);
+}
+
+/**
+ * 请求 AI 视频回复 (核心 Prompt 修改)
+ */
+async function requestAIVideoResponse(userContent) {
+    if (aiReplyingSet.has(videoCallFriendId)) return;
+    aiReplyingSet.add(videoCallFriendId);
+
+    const friend = friends.find(f => f.id === videoCallFriendId);
+    const settings = await dbManager.get('apiSettings', 'settings');
+    
+    // 显示"对方正在说话"提示
+    const logContainer = document.getElementById('videoCallLog');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'video-narration';
+    loadingDiv.id = 'videoLoading';
+    loadingDiv.textContent = "对方正在看着屏幕...";
+    logContainer.appendChild(loadingDiv);
+    
+    try {
+        const persona = userPersonas.find(p => p.id === (friend.activeUserPersonaId || 'default_user')) || userProfile;
+        
+        // 获取最近的视频聊天记录作为上下文
+        const recentLogs = Array.from(document.querySelectorAll('#videoCallLog .video-bubble, #videoCallLog .video-narration'))
+            .slice(-10)
+            .map(el => {
+                const isUser = el.classList.contains('user');
+                const isNarration = el.classList.contains('video-narration');
+                if (isNarration) return `(画面/动作): ${el.textContent}`;
+                return `${isUser ? '用户' : '你'}: ${el.textContent}`;
+            }).join('\n');
+
+        const prompt = `
+【模式】: **视频通话 (Video Call)**
+【你的身份】: "${friend.name}" (人设: ${friend.role})
+【对话对象】: "${persona.name}"
+【当前情景】: 你们正在进行视频通话。你能看到对方的脸和环境，对方也能看到你。
+
+【上下文回顾】:
+${recentLogs}
+【用户刚刚说/做】: "${userContent}"
+
+【【【视频通话演绎铁律】】】
+1.  **【视觉化旁白】**: 你的回复必须包含大量的**视觉描写**。因为是视频，你要描写你的**表情、眼神、手势**以及你**背景里的环境**。
+    -   *示例*: (凑近镜头看了看) / (害羞地移开视线) / (拿起手边的水杯喝了一口) / (指着身后的猫咪)。
+2.  **【眼神交流】**: 旁白要体现出你们通过屏幕的眼神接触。
+3.  **【格式要求】**:
+    -   你的回复必须是一个 JSON 数组。
+    -   包含 \`dialogue\` (你的话) 和 \`narration\` (画面动作描写)。
+    -   **narration (旁白)**: 用于描写画面。例如："他撑着下巴，笑盈盈地看着镜头。"
+    -   **dialogue (对话)**: 正常的口语交流。
+
+【JSON格式示例】:
+[
+  { "type": "narration", "content": "他调整了一下手机角度，露出刚洗完澡湿漉漉的头发，有些慵懒地靠在枕头上。" },
+  { "type": "dialogue", "content": "怎么这么晚才打过来？" },
+  { "type": "narration", "content": "屏幕里的他微微皱眉，似乎在仔细观察你的脸色。" },
+  { "type": "dialogue", "content": "你看上去有点累啊。" }
+]
+
+现在，请生成回复。`;
+
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.95
+            })
+        });
+
+        const data = await response.json();
+        const contentStr = data.choices[0].message.content;
+        const jsonMatch = contentStr.match(/\[[\s\S]*\]/);
+        
+        if (jsonMatch) {
+            const actions = JSON.parse(jsonMatch[0]);
+            
+            // 移除 loading
+            if (document.getElementById('videoLoading')) document.getElementById('videoLoading').remove();
+
+            for (const action of actions) {
+                await new Promise(r => setTimeout(r, 800)); // 模拟节奏
+                addVideoLogItem(action, 'ai');
+                // 保存记录 (复用 voice_call_dialogue 类型，因为本质一样)
+                saveChatMessage(videoCallFriendId, 'received', action.content, '', friend.id, 'voice_call_dialogue');
+            }
+        }
+
+    } catch (e) {
+        console.error(e);
+        if (document.getElementById('videoLoading')) document.getElementById('videoLoading').textContent = "(信号不佳...)";
+    } finally {
+        aiReplyingSet.delete(videoCallFriendId);
+    }
+}
+
+/**
+ * 添加日志项到屏幕
+ */
+function addVideoLogItem(item, senderType) {
+    const container = document.getElementById('videoCallLog');
+    const div = document.createElement('div');
+    
+    if (item.type === 'dialogue') {
+        div.className = `video-bubble ${senderType}`;
+        div.textContent = item.content;
+    } else {
+        // 旁白：居中显示
+        div.className = 'video-narration';
+        div.textContent = item.content.replace(/[()（）]/g, ''); // 去掉括号，因为样式已经区别开了
+    }
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+/**
+ * [修复版] 挂断视频
+ */
+async function endVideoCall() {
+    if (!isVideoCallActive) return;
+    
+    clearInterval(videoTimerInterval);
+    // 获取当前时长，如果获取失败则默认为 00:00
+    const durationEl = document.getElementById('videoDuration');
+    const duration = durationEl ? durationEl.textContent : "00:00";
+    
+    const callEndMessage = `视频通话结束，时长 ${duration}`;
+
+    // 【核心修复】使用 'system_tip' 类型，这样就会显示为系统提示，而不是气泡
+    await saveChatMessage(videoCallFriendId, 'system', callEndMessage, '', null, 'system_tip');
+
+    isVideoCallActive = false;
+    videoCallFriendId = null;
+    
+    setActivePage('chatScreen');
+    
+    // 刷新聊天界面，让系统提示显示出来
+    if (document.getElementById('chatMessages')) {
+        renderInitialMessages();
+    }
+}
+
+/**
+ * 显示视频来电
+ */
+function showIncomingVideoCall(friendId) {
+    const friend = friends.find(f => f.id === friendId);
+    if (!friend) return;
+    
+    incomingVideoData = { friendId };
+    
+    const bg = document.getElementById('incomingVideoBg');
+    const avatar = document.getElementById('incomingVideoAvatar');
+    const name = document.getElementById('incomingVideoName');
+    
+    name.textContent = friend.remark || friend.name;
+    
+    if (friend.avatarImage) {
+        bg.style.backgroundImage = `url('${friend.avatarImage}')`;
+        avatar.style.backgroundImage = `url('${friend.avatarImage}')`;
+        avatar.textContent = '';
+    } else {
+        bg.style.backgroundImage = '';
+        bg.style.backgroundColor = '#333';
+        avatar.style.backgroundImage = '';
+        avatar.textContent = friend.avatar || friend.name[0];
+    }
+    
+    setActivePage('incomingVideoCallScreen');
+}
+
+function acceptVideoCall() {
+    if (!incomingVideoData) return;
+    const fid = incomingVideoData.friendId;
+    incomingVideoData = null;
+    
+    // 直接复用发起逻辑，但跳过等待
+    videoCallFriendId = fid;
+    isVideoCallActive = true;
+    const friend = friends.find(f => f.id === fid);
+    
+    setupVideoUI(friend);
+    
+    // 立即开始
+    document.getElementById('videoDuration').textContent = "00:00";
+    callStartTime = new Date();
+    videoTimerInterval = setInterval(() => {
+        // ... (同上计时逻辑)
+        const now = new Date();
+        const diff = Math.floor((now - callStartTime) / 1000);
+        const minutes = String(Math.floor(diff / 60)).padStart(2, '0');
+        const seconds = String(diff % 60).padStart(2, '0');
+        document.getElementById('videoDuration').textContent = `${minutes}:${seconds}`;
+    }, 1000);
+    
+    document.getElementById('videoCallLog').innerHTML = '';
+    document.getElementById('videoInputArea').style.display = 'flex';
+    
+    setActivePage('videoCallScreen');
+    
+    // 让AI先说话
+    requestAIVideoResponse("(用户接通了你的视频通话)");
+}
+
+function declineVideoCall() {
+    if (!incomingVideoData) return;
+    const fid = incomingVideoData.friendId;
+    incomingVideoData = null;
+    
+    saveChatMessage(fid, 'system', '你拒绝了视频通话', '', null, 'system_tip');
+    setActivePage('chatScreen');
+}
+
+// --- 1. 设置与初始化 (修复版：文字改为黑色) ---
+function openTurtleSoupSetup() {
+    // 渲染好友列表 (单选)
+    const list = document.getElementById('soupFriendList');
+    list.innerHTML = '';
+    
+    // 筛选非群聊好友
+    const aiFriends = friends.filter(f => !f.isGroup);
+
+    if (aiFriends.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">暂无好友</div>';
+    } else {
+        aiFriends.forEach(friend => {
+            const item = document.createElement('div');
+            item.className = 'multi-select-item';
+            // 增加一点内边距和底部线条，更好看
+            item.style.cssText = 'padding: 12px 10px; border-bottom: 1px solid #f5f5f5; display: flex; align-items: center;';
+            
+            // 【核心修复】
+            // 1. 去掉了 label 的 style="color:#fff"
+            // 2. 加入了 font-size 和 color: #333 (深灰/黑色)
+            // 3. (可选) 加入了头像显示，让列表更美观
+            
+            const avatarHtml = friend.avatarImage 
+                ? `<div style="width:32px; height:32px; border-radius:50%; background-image:url('${friend.avatarImage}'); background-size:cover; background-position:center; margin:0 10px;"></div>`
+                : `<div style="width:32px; height:32px; border-radius:50%; background:#eee; color:#333; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; margin:0 10px;">${friend.avatar || friend.name[0]}</div>`;
+
+            item.innerHTML = `
+                <input type="radio" name="soupFriend" id="soup-friend-${friend.id}" value="${friend.id}" style="accent-color: #000;">
+                ${avatarHtml}
+                <label for="soup-friend-${friend.id}" style="color:#333; font-size:15px; font-weight:500; flex:1; cursor:pointer;">${friend.remark || friend.name}</label>
+            `;
+            
+            // 点击整行也能选中
+            item.onclick = (e) => {
+                // 如果点击的不是input本身，手动触发选中
+                if (e.target.tagName !== 'INPUT') {
+                    const radio = item.querySelector('input');
+                    radio.checked = true;
+                }
+            };
+            
+            list.appendChild(item);
+        });
+    }
+
+    // 默认选项
+    selectSoupHost('friend');
+    selectSoupSource('random');
+    
+    document.getElementById('turtleSoupSetupModal').classList.add('show');
+}
+
+function selectSoupHost(type) {
+    turtleSoupState.host = type;
+    document.getElementById('btnSoupHostFriend').className = `uc-mode-btn ${type === 'friend' ? 'active' : ''}`;
+    document.getElementById('btnSoupHostUser').className = `uc-mode-btn ${type === 'user' ? 'active' : ''}`;
+    
+    // 如果我是主持人，只能选指定汤（为了逻辑简单，或者你可以允许随机）
+    // 这里我们允许随机，意思是系统随机发给我一个汤底
+}
+
+function selectSoupSource(type) {
+    turtleSoupState.source = type;
+    document.getElementById('btnSoupSourceRandom').className = `uc-mode-btn ${type === 'random' ? 'active' : ''}`;
+    document.getElementById('btnSoupSourceSpecific').className = `uc-mode-btn ${type === 'specific' ? 'active' : ''}`;
+    
+    const hint = document.getElementById('soupSourceHint');
+    if (type === 'random') hint.textContent = "随机汤：系统随机抽取汤底，未知更有趣。";
+    else hint.textContent = "指定汤：进入列表选择心仪的汤底。";
+}
+
+function backToSoupSetup() {
+    setActivePage('gamesApp'); // 或者不用 page，直接隐藏 select screen
+    document.getElementById('turtleSoupSelectScreen').classList.remove('active');
+    document.getElementById('turtleSoupSetupModal').classList.add('show');
+}
+
+function startTurtleSoupSetup() {
+    const selected = document.querySelector('input[name="soupFriend"]:checked');
+    if (!selected) return showToast("请选择一位好友");
+    
+    turtleSoupState.friendId = selected.value;
+    
+    document.getElementById('turtleSoupSetupModal').classList.remove('show');
+    
+    if (turtleSoupState.source === 'specific') {
+        // 进入选题页面
+        openSoupSelectionScreen();
+    } else {
+        // 随机选题并直接开始
+        const randomSoup = TURTLE_SOUP_DB[Math.floor(Math.random() * TURTLE_SOUP_DB.length)];
+        initTurtleSoupGame(randomSoup);
+    }
+}
+
+// --- 2. 选题页面 ---
+
+function openSoupSelectionScreen(isNextGameMode = false) {
+    setActivePage('turtleSoupSelectScreen');
+    
+    // 修改返回按钮逻辑
+    const navBar = document.querySelector('#turtleSoupSelectScreen .nav-bar');
+    const backBtn = navBar.querySelector('.nav-btn');
+    
+    if (isNextGameMode) {
+        // 如果是下一局模式，返回键回到游戏界面
+        backBtn.onclick = () => {
+            setActivePage('turtleSoupGameScreen');
+        };
+    } else {
+        // 否则返回设置界面
+        backBtn.onclick = backToSoupSetup;
+    }
+
+    const container = document.getElementById('soupLibraryList');
+    container.innerHTML = '';
+    
+    TURTLE_SOUP_DB.forEach(soup => {
+        const item = document.createElement('div');
+        item.className = 'soup-item-card';
+        item.onclick = () => {
+            if (isNextGameMode) {
+                loadNewSoupGame(soup); // 下一局模式：不清除聊天，直接加载新题
+            } else {
+                initTurtleSoupGame(soup); // 初始模式：清除聊天，重新初始化
+            }
+        };
+        
+        const tags = soup.tags.map(t => `<span class="soup-item-tag">${t}</span>`).join(' ');
+        
+        item.innerHTML = `
+            <div class="soup-item-header">
+                <span class="soup-item-title">${soup.title}</span>
+                <span style="font-size:12px;color:#4caf50;">选择</span>
+            </div>
+            <div class="soup-item-preview">${soup.surface}</div>
+            <div class="soup-item-footer">
+                <div class="soup-item-tags">${tags}</div>
+                <span>难度: ⭐⭐⭐</span>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+// --- 3. 游戏核心初始化 ---
+
+function initTurtleSoupGame(soupData) {
+    turtleSoupState.active = true;
+    turtleSoupState.currentSoup = soupData;
+    turtleSoupState.clueCount = 0;
+    
+    const friend = friends.find(f => f.id === turtleSoupState.friendId);
+    
+    // 切换界面
+    setActivePage('turtleSoupGameScreen');
+    document.querySelector('.phone').classList.add('status-bar-hidden'); // 全屏沉浸
+    
+    // 渲染顶部卡片
+    const tagsContainer = document.getElementById('soupGameTags');
+    tagsContainer.innerHTML = soupData.tags.map(t => `<span class="soup-tag">${t}</span>`).join('');
+    
+    document.getElementById('soupGameSurface').innerText = soupData.surface;
+    
+    // 渲染主持人信息
+    const hostAvatarEl = document.getElementById('soupHostAvatar');
+    const hostNameEl = document.getElementById('soupHostName');
+    
+    if (turtleSoupState.host === 'friend') {
+        // 好友是主持人
+        const avatarUrl = friend.avatarImage || '';
+        hostAvatarEl.style.backgroundImage = avatarUrl ? `url('${avatarUrl}')` : '';
+        hostAvatarEl.style.backgroundColor = avatarUrl ? '' : '#333';
+        hostAvatarEl.textContent = avatarUrl ? '' : (friend.avatar || friend.name[0]);
+        hostNameEl.textContent = `主持人: ${friend.remark || friend.name}`;
+        
+        // 初始消息：好友发布汤面
+        addSoupLog(friend.name, `汤面已出，请提问吧。（只能问 是/不是 的问题哦）`, 'ai');
+        
+    } else {
+        // 我是主持人
+        const avatarUrl = userProfile.avatarImage || '';
+        hostAvatarEl.style.backgroundImage = avatarUrl ? `url('${avatarUrl}')` : '';
+        hostAvatarEl.style.backgroundColor = avatarUrl ? '' : '#333';
+        hostAvatarEl.textContent = avatarUrl ? '' : userProfile.name[0];
+        hostNameEl.textContent = `主持人: 我`;
+        
+        addSoupLog("系统", `你已成为主持人。请等待 ${friend.name} 提问。`, 'sys');
+        
+        // 触发AI猜题
+        setTimeout(() => requestTurtleSoupAIResponse(null, 'start_guessing'), 1000);
+    }
+    
+    // 清空聊天
+    document.getElementById('soupChatArea').innerHTML = '';
+}
+
+// --- 4. 游戏内交互 ---
+
+// 显示汤底 (权限控制)
+function showSoupAnswer() {
+    const soup = turtleSoupState.currentSoup;
+    const content = document.getElementById('soupAnswerContent');
+    
+    if (turtleSoupState.host === 'friend') {
+        // 好友主持：点击汤底 = 认输/查看答案
+        showConfirm("查看汤底意味着认输/游戏结束，确定吗？", (confirmed) => {
+            if (confirmed) {
+                content.innerText = soup.bottom;
+                document.getElementById('soupAnswerModal').classList.add('show');
+                addSoupLog("系统", "你查看了汤底，游戏结束。", "sys");
+                // 可选：触发AI嘲讽或安慰
+            }
+        });
+    } else {
+        // 我主持：随时可看，作为参考
+        content.innerText = `【汤底 (仅主持人可见)】\n${soup.bottom}`;
+        document.getElementById('soupAnswerModal').classList.add('show');
+    }
+}
+
+// 处理线索按钮
+async function handleSoupClue() {
+    const friend = friends.find(f => f.id === turtleSoupState.friendId);
+    
+    if (turtleSoupState.clueCount >= turtleSoupState.maxClues) {
+        return showToast("线索次数已用尽 (3/3)");
+    }
+    
+    if (turtleSoupState.host === 'friend') {
+        // 好友主持：我请求线索
+        // 发送请求消息
+        addSoupLog("我", "需要提示线索", "user");
+        turtleSoupState.clueCount++;
+        
+        // 触发AI判定给不给
+        await requestTurtleSoupAIResponse("用户请求线索", "give_clue");
+        
+    } else {
+        // 我主持：选择线索发送给AI
+        const list = document.getElementById('soupClueList');
+        list.innerHTML = '';
+        turtleSoupState.currentSoup.clues.forEach(clue => {
+            const item = document.createElement('div');
+            item.className = 'soup-clue-item';
+            item.innerText = clue;
+            item.onclick = () => {
+                sendClueAsHost(clue);
+                document.getElementById('soupClueSelectModal').classList.remove('show');
+            };
+            list.appendChild(item);
+        });
+        document.getElementById('soupClueSelectModal').classList.add('show');
+    }
+}
+
+function sendClueAsHost(clueText) {
+    addSoupLog("我", `[线索] ${clueText}`, "user");
+    turtleSoupState.clueCount++;
+    // 触发AI根据线索继续猜
+    requestTurtleSoupAIResponse(clueText, "receive_clue");
+}
+
+// 发送消息
+async function sendSoupMessage() {
+    const input = document.getElementById('soupInput');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    if (turtleSoupState.host === 'friend') {
+        // 我是猜题者：提问
+        addSoupLog("我", text, "user");
+        input.value = '';
+        
+        // 触发AI回答 Yes/No
+        await requestTurtleSoupAIResponse(text, "answer_question");
+        
+    } else {
+        // 我是主持人：回答 Yes/No
+        addSoupLog("我", text, "user");
+        input.value = '';
+        
+        // 触发AI继续猜
+        await requestTurtleSoupAIResponse(text, "continue_guessing");
+    }
+}
+
+// 渲染日志气泡
+function addSoupLog(name, text, type) {
+    const container = document.getElementById('soupChatArea');
+    const div = document.createElement('div');
+    
+    if (type === 'sys') {
+        div.className = 'soup-system-msg';
+        div.innerText = text;
+    } else {
+        div.className = `message ${type === 'user' ? 'sent' : 'received'}`;
+        // 简单复用聊天气泡样式，或者自定义
+        const friend = friends.find(f => f.id === turtleSoupState.friendId);
+        let avatarHtml = '';
+        
+        if (type === 'user') {
+            avatarHtml = userProfile.avatarImage 
+                ? `<div class="chat-avatar" style="background-image: url('${userProfile.avatarImage}')"></div>` 
+                : `<div class="chat-avatar">${userProfile.name[0]}</div>`;
+        } else {
+            avatarHtml = friend.avatarImage 
+                ? `<div class="chat-avatar" style="background-image: url('${friend.avatarImage}')"></div>` 
+                : `<div class="chat-avatar">${friend.name[0]}</div>`;
+        }
+
+        const bubbleHtml = `<div class="message-content" style="background:${type==='user'?'#4caf50':'#fff'}; color:${type==='user'?'#fff':'#000'};">${text}</div>`;
+        
+        div.innerHTML = type === 'user' ? (bubbleHtml + avatarHtml) : (avatarHtml + bubbleHtml);
+    }
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+// --- 5. AI 核心逻辑 ---
+
+// --- 5. AI 核心逻辑 (修正优化版) ---
+
+async function requestTurtleSoupAIResponse(userInput, mode) {
+    if (turtleSoupState.isProcessing) return;
+    turtleSoupState.isProcessing = true;
+
+    const friend = friends.find(f => f.id === turtleSoupState.friendId);
+    const settings = await getGameEffectiveSettings(); // 使用游戏专用API配置
+    const activePersona = userPersonas.find(p => p.id === friend.activeUserPersonaId) || userProfile;
+
+    if (!settings.apiKey) {
+        turtleSoupState.isProcessing = false;
+        return showToast("请先配置API");
+    }
+
+    // --- 1. UI 加载反馈 ---
+    const sendBtnIcon = document.querySelector('.soup-send-btn i');
+    if(sendBtnIcon) {
+        sendBtnIcon.className = 'ri-loader-4-line fa-spin'; // 按钮转圈
+    }
+    showToast("对方正在思考...");
+
+    // 读取最近20条游戏记录
+    const chatArea = document.getElementById('soupChatArea');
+    const logs = Array.from(chatArea.querySelectorAll('.message')).slice(-20).map(el => {
+        const isMe = el.classList.contains('sent');
+        const content = el.querySelector('.message-content').innerText;
+        return isMe ? `用户: ${content}` : `${friend.name}: ${content}`;
+    }).join('\n');
+
+    let taskInstruction = "";
+    
+    // 根据模式构建任务指令
+    if (mode === 'answer_question') {
+        // AI 是主持人
+        taskInstruction = `
+【当前状态】: 你是主持人。用户问了: "${userInput}"。
+【任务】: 
+1. 判断用户的问题与【汤底】的关系。
+2. **回答规则**: 必须且只能回答: "是"、"不是"、"不重要"、"没关系"、"是个好问题" 这几类词，加上符合你人设的一两句短评。
+3. **特殊情况**: 如果用户猜到了核心真相，输出特殊标记: "[SUCCESS] (你的祝贺语)"。
+4. **禁止**: 严禁直接泄露汤底！严禁使用 Markdown (如 **加粗**)。
+`;
+    } 
+    else if (mode === 'give_clue') {
+        // AI 是主持人 (给线索)
+        const clueIndex = turtleSoupState.clueCount - 1;
+        const clue = turtleSoupState.currentSoup.clues[clueIndex] || "没有更多线索了，再仔细想想汤面？";
+        taskInstruction = `
+【当前状态】: 用户请求提示。
+【任务】: 请用符合你人设的语气，把这条线索告诉用户: "${clue}"。
+`;
+    }
+    else if (mode.includes('guessing') || mode === 'receive_clue') {
+        // AI 是猜题者
+        taskInstruction = `
+【当前状态】: 你是猜题者。用户是主持人。
+${mode === 'continue_guessing' ? `用户刚才回答: "${userInput}"` : ''}
+${mode === 'receive_clue' ? `用户给了线索: "${userInput}"` : ''}
+【任务】: 
+1. 根据汤面和线索推理真相。
+2. 提出一个 "是/不是" 的问题。
+3. **禁止**: 严禁一次问多个问题。严禁使用 Markdown。
+4. 如果遇到瓶颈，输出特殊标记: "[REQUEST_CLUE] (你的撒娇/求助语)"。
+5**必须**严格遵守和贴合人设，不可以ooc！！
+`;
+    }
+
+let soupBottomInfo = "";
+    if (turtleSoupState.host === 'friend') {
+        soupBottomInfo = turtleSoupState.currentSoup.bottom; // AI主持，给答案
+    } else {
+        soupBottomInfo = "（未知，严禁偷看！你需要通过向用户提问来推理出这个真相）"; // AI猜题，隐藏答案
+    }
+
+    const prompt = `
+【游戏】: 海龟汤 (情境猜谜)
+【你的身份】: "${friend.name}" (人设: ${friend.role})
+【用户身份】: "${activePersona.name}"
+【汤面】: ${turtleSoupState.currentSoup.surface}
+【汤底(真相)】: ${soupBottomInfo}
+
+【游戏记录】:
+${logs}
+
+${taskInstruction}
+
+【【【输出格式铁律 (必须严格遵守)】】】
+1.  **JSON数组**: 你的回复必须是一个纯净的 JSON 字符串数组 \`[]\`。
+2.  **分条发送**: 为了模拟真实聊天，请将你的回复拆分成 1-3 条短消息。
+3.  **禁止Markdown**: **绝对禁止**使用星号 \`*\`、波浪线 \`~\` 等 Markdown 符号。
+4.  **口语化**: 像真人一样说话，不要长篇大论。
+5**必须**严格遵守和贴合人设，不可以ooc！！
+
+【JSON示例】:
+["不是哦。", "这个方向不对，再想想。"]
+或
+["是！", "你太聪明了！"]
+或
+["是个好问题...", "但是和死因无关。"]
+
+现在，请输出 JSON 数组：`;
+
+    // --- 核心执行函数 (用于重试) ---
+    const executeRequest = async () => {
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.8 })
+        });
+
+        if (!response.ok) throw new Error("API请求失败");
+
+        const data = await response.json();
+        const rawContent = data.choices[0].message.content;
+        
+        let messages = [];
+        try {
+            const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+            messages = jsonMatch ? JSON.parse(jsonMatch[0]) : [rawContent.trim().replace(/^["“”]|["“”]$/g, '')];
+        } catch (e) {
+            messages = [rawContent.trim()]; // 兜底
+        }
+
+        // 逐条发送消息
+        for (let msgContent of messages) {
+            // 清理可能残留的 Markdown
+            msgContent = msgContent.replace(/\*\*/g, '').replace(/\*/g, '');
+
+            // 处理特殊指令
+            if (msgContent.includes("[SUCCESS]")) {
+                msgContent = msgContent.replace("[SUCCESS]", "").trim();
+                setTimeout(() => {
+                    showConfirm("游戏胜利！要查看完整汤底吗？", (yes) => {
+                        if (yes) showSoupAnswer();
+                    });
+                }, 2000);
+            }
+            if (msgContent.includes("[REQUEST_CLUE]")) {
+                msgContent = msgContent.replace("[REQUEST_CLUE]", "").trim();
+                showToast("AI 向你求助了！");
+            }
+
+            await new Promise(r => setTimeout(r, 600 + Math.random() * 500)); // 模拟输入延迟
+            addSoupLog(friend.name, msgContent, 'ai');
+        }
+    };
+
+    // --- 错误处理 ---
+    try {
+        await executeRequest();
+    } catch (e) {
+        console.error(e);
+        // 弹出带重回按钮的错误框
+        await handleGameApiError(
+            e,
+            executeRequest, // 重试回调
+            () => addSoupLog("系统", "AI 掉线了，请重试。", "sys") // 跳过回调
+        );
+    } finally {
+        turtleSoupState.isProcessing = false;
+        // 恢复按钮图标
+        if(sendBtnIcon) sendBtnIcon.className = 'ri-send-plane-fill';
+    }
+}
+
+// 结束游戏
+function manualEndSoupGame() {
+    showConfirm("确定结束本局游戏吗？", (yes) => {
+        if(yes) {
+            // 显示汤底
+            document.getElementById('soupAnswerContent').innerText = turtleSoupState.currentSoup.bottom;
+            document.getElementById('soupAnswerModal').classList.add('show');
+            // 关闭后退出
+            const closeBtn = document.querySelector('#soupAnswerModal .modal-btn-confirm');
+            const oldOnClick = closeBtn.onclick;
+            closeBtn.onclick = () => {
+                document.getElementById('soupAnswerModal').classList.remove('show');
+                quitTurtleSoup();
+                closeBtn.onclick = oldOnClick; // 恢复
+            };
+        }
+    });
+}
+
+function quitTurtleSoup() {
+    turtleSoupState.active = false;
+    document.querySelector('.phone').classList.remove('status-bar-hidden');
+    setActivePage('gamesApp');
+}
+
+// 1. 打开下一局设置弹窗
+function openNextSoupSetup() {
+    // 重置配置为当前状态或默认
+    nextSoupConfig.host = turtleSoupState.host; // 默认沿用上一局主持人
+    nextSoupConfig.source = 'random'; // 默认随机
+
+    // 更新UI显示
+    selectNextSoupHost(nextSoupConfig.host);
+    selectNextSoupSource('random');
+
+    document.getElementById('turtleSoupNextGameModal').classList.add('show');
+}
+
+// 2. 切换主持人选项
+function selectNextSoupHost(type) {
+    nextSoupConfig.host = type;
+    document.getElementById('btnNextSoupHostFriend').className = `uc-mode-btn ${type === 'friend' ? 'active' : ''}`;
+    document.getElementById('btnNextSoupHostUser').className = `uc-mode-btn ${type === 'user' ? 'active' : ''}`;
+}
+
+// 3. 切换汤底来源选项
+function selectNextSoupSource(type) {
+    nextSoupConfig.source = type;
+    document.getElementById('btnNextSoupSourceRandom').className = `uc-mode-btn ${type === 'random' ? 'active' : ''}`;
+    document.getElementById('btnNextSoupSourceSpecific').className = `uc-mode-btn ${type === 'specific' ? 'active' : ''}`;
+}
+
+// 4. 确认开始下一局
+function confirmNextSoup() {
+    document.getElementById('turtleSoupNextGameModal').classList.remove('show');
+
+    // 更新全局游戏状态中的主持人设置
+    turtleSoupState.host = nextSoupConfig.host;
+
+    if (nextSoupConfig.source === 'specific') {
+        // 如果是指定汤，打开选择列表（带 special mode 标记）
+        openSoupSelectionScreen(true); 
+    } else {
+        // 如果是随机汤，直接开始
+        const randomSoup = TURTLE_SOUP_DB[Math.floor(Math.random() * TURTLE_SOUP_DB.length)];
+        loadNewSoupGame(randomSoup);
+    }
+}
+
+// 6. 【核心】加载新一局游戏（保留历史记录版）
+function loadNewSoupGame(soupData) {
+    turtleSoupState.active = true;
+    turtleSoupState.currentSoup = soupData;
+    turtleSoupState.clueCount = 0;
+    
+    // 如果是从选择列表进来的，确保切回游戏界面
+    setActivePage('turtleSoupGameScreen');
+
+    const friend = friends.find(f => f.id === turtleSoupState.friendId);
+    
+    // --- 1. 更新顶部汤面卡片 ---
+    const tagsContainer = document.getElementById('soupGameTags');
+    tagsContainer.innerHTML = soupData.tags.map(t => `<span class="soup-tag">${t}</span>`).join('');
+    document.getElementById('soupGameSurface').innerText = soupData.surface;
+
+    // --- 2. 更新主持人信息 ---
+    const hostAvatarEl = document.getElementById('soupHostAvatar');
+    const hostNameEl = document.getElementById('soupHostName');
+    
+    if (turtleSoupState.host === 'friend') {
+        const avatarUrl = friend.avatarImage || '';
+        hostAvatarEl.style.backgroundImage = avatarUrl ? `url('${avatarUrl}')` : '';
+        hostAvatarEl.style.backgroundColor = avatarUrl ? '' : '#333';
+        hostAvatarEl.textContent = avatarUrl ? '' : (friend.avatar || friend.name[0]);
+        hostNameEl.textContent = `主持人: ${friend.remark || friend.name}`;
+    } else {
+        const avatarUrl = userProfile.avatarImage || '';
+        hostAvatarEl.style.backgroundImage = avatarUrl ? `url('${avatarUrl}')` : '';
+        hostAvatarEl.style.backgroundColor = avatarUrl ? '' : '#333';
+        hostAvatarEl.textContent = avatarUrl ? '' : userProfile.name[0];
+        hostNameEl.textContent = `主持人: 我`;
+    }
+
+    // --- 3. 插入分割线系统提示 ---
+    addSoupLog("系统", "────────── 下一局 ──────────", "sys");
+    
+    // --- 4. 触发开场 ---
+    if (turtleSoupState.host === 'friend') {
+        addSoupLog(friend.name, `新的汤面来啦，请提问吧。`, 'ai');
+    } else {
+        addSoupLog("系统", `你已成为主持人。新的汤面已更新，请等待 ${friend.name} 提问。`, 'sys');
+        // 触发AI猜题
+        setTimeout(() => requestTurtleSoupAIResponse(null, 'start_guessing'), 1000);
+    }
 }
 
     </script>
