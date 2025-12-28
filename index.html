@@ -21078,7 +21078,17 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
             <div class="form-group-row clickable" id="proactiveRoleSetting" style="display: none;" onclick="openProactiveRolesModal()">
                 <label class="form-label">选择生效角色</label>
                 <div class="form-value-display">点击选择 <i class="ri-arrow-right-s-line"></i></div>
+               
             </div>
+            <!-- 在 settingsApp 的 form-card 里添加这个开关 -->
+<div class="form-group-row switch-row">
+    <label class="form-label">后台通知保活</label>
+    <label class="toggle-switch bw-switch">
+        <input type="checkbox" id="backgroundKeepAliveToggle" onchange="toggleBackgroundSystem(this)">
+        <span class="toggle-slider"></span>
+    </label>
+</div>
+<div class="form-hint">开启后将播放静音音频，确保锁屏或后台时能收到系统通知。</div>
         </div>
         
         <!-- 卡片 3：智能总结 -->
@@ -26768,6 +26778,13 @@ let turtleSoupState = {
     maxClues: 3,
     isProcessing: false // 防止重复请求
 };
+
+// 1. 0.5秒的静音 MP3 Base64
+const SILENT_AUDIO_DATA = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD//////////////////////////////////////////////////////////////////wAAAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAAAASAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAA';
+
+let keepAliveAudio = new Audio(SILENT_AUDIO_DATA);
+keepAliveAudio.loop = true; // 循环播放
+keepAliveAudio.volume = 0.1; // 极低音量（虽然本身就是静音）
 
 // 预设海龟汤题库 (包含用户提供 + 经典扩充，共67道)
 const TURTLE_SOUP_DB = [
@@ -32607,6 +32624,7 @@ try {
                                 lastMessageId = msgData.id;
                                 playMessageSound('received'); 
                                 showNotification(friend, action.content);
+                                sendRealNotification(friend.remark || friend.name, action.content, friend.avatarImage);
                                 if (isFromListenScreen) {
                                     addMessageToDOM(msgData, friend, 'listenTogetherChatOverlay');
                                 } else if (currentChatFriendId === friendId) {
@@ -35018,6 +35036,7 @@ ${todayChats || '我们刚刚很安静，没有聊天。'}
             };
             const newId = await dbManager.set('diaries', newDiary);
             newDiary.id = newId;
+            sendRealNotification(friend.name, `写了一篇新日记`, friend.avatarImage);
             diaries.unshift(newDiary);
 
             await saveData();
@@ -35239,6 +35258,7 @@ ${recentFriendMoments || '你最近没有发过朋友圈。'}
 
                             const newId = await dbManager.set('moments', newMoment);
                             newMoment.id = newId;
+                            sendRealNotification(friend.name, `发布了一条朋友圈: ${momentData.content}`, friend.avatarImage);
                             broadcastAiActivity('ai_moment', { content: momentData.content }, friend.id);
                             moments.unshift(newMoment);
                             
@@ -42755,6 +42775,7 @@ async function postForumMessage() {
 
     const newId = await dbManager.set('forumPosts', newPost);
     newPost.id = newId;
+    sendRealNotification("论坛新动态", `${randomAi.name} 发布了新帖子: ${content.substring(0, 30)}...`, randomAi.avatarImage);
     forumPosts.unshift(newPost);
 
     if (currentForumSubTab === 'recommended') {
@@ -61900,6 +61921,7 @@ ${history || '无'}
                 timestamp: new Date().toISOString()
             };
             friend.loversWhispersList.unshift(newWhisper);
+            sendRealNotification(friend.name, `在情侣空间悄悄贴了一张纸条...`, friend.avatarImage);
             broadcastAiActivity('ai_whisper', { content: text }, friend.id);
             newCount++;
         });
@@ -68115,6 +68137,72 @@ function loadNewSoupGame(soupData) {
         addSoupLog("系统", `你已成为主持人。新的汤面已更新，请等待 ${friend.name} 提问。`, 'sys');
         // 触发AI猜题
         setTimeout(() => requestTurtleSoupAIResponse(null, 'start_guessing'), 1000);
+    }
+}
+
+// --- [新增] 后台保活与系统通知模块 ---
+
+// 2. 请求通知权限并启动保活
+function enableBackgroundSystem() {
+    // A. 尝试播放静音音频（需要用户交互触发）
+    keepAliveAudio.play().then(() => {
+        console.log("后台保活已启动 (静音音频播放中)");
+    }).catch(e => {
+        console.warn("无法自动播放静音音频，请确保有点击交互", e);
+    });
+
+    // B. 请求系统通知权限
+    if ("Notification" in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                showToast("系统通知权限已获取");
+            } else {
+                showAlert("请允许通知权限，否则后台无法弹窗。");
+            }
+        });
+    } else {
+        showAlert("当前浏览器不支持系统通知。");
+    }
+}
+
+// 3. 发送真实系统通知的函数
+function sendRealNotification(title, body, icon) {
+    // 只有当页面不可见（在后台）或者用户开启了强制通知时触发
+    if (document.visibilityState === 'hidden') {
+        if (Notification.permission === "granted") {
+            // 在手机上，ServiceWorker 推送是标准的，但纯前端环境下，
+            // 只要音频在播放（线程活着），new Notification 也能在部分安卓/iOS版本触发横幅
+            try {
+                // 如果是安卓设备，尝试震动
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                
+                const n = new Notification(title, {
+                    body: body,
+                    icon: icon || 'https://jrsy081113-hue.github.io/jrsy/star-icon.png',
+                    tag: 'ai_reply', // 防止消息过多刷屏，相同的tag会覆盖
+                    renotify: true   // 允许覆盖后再次震动/响铃
+                });
+                
+                n.onclick = function() {
+                    window.focus(); // 点击通知尝试切回网页
+                    n.close();
+                };
+            } catch (e) {
+                console.error("系统通知发送失败:", e);
+            }
+        }
+    }
+}
+
+// 控制后台保活开关
+function toggleBackgroundSystem(checkbox) {
+    if (checkbox.checked) {
+        enableBackgroundSystem(); // 调用之前定义的开启函数
+    } else {
+        if (window.keepAliveAudio) {
+            window.keepAliveAudio.pause(); // 关闭时暂停音频
+            showToast("后台保活已关闭");
+        }
     }
 }
 
