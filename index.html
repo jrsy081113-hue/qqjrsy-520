@@ -18836,29 +18836,43 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     margin-top: 60px;
 }
 
-/* 6. 对话日志区域 (防遮挡 + 渐变) */
+/* --- 修复版：视频通话日志区域 --- */
 .video-log-container {
     position: relative;
     z-index: 10;
-    flex: 1;
-    overflow-y: auto;
+    flex: 1; /* 占据剩余空间 */
     
-    /* 【位置修复】220px = 顶部空隙 + 头像高度 + 缓冲距离 */
-    /* 这会让第一条消息最高只能到达红线下方，绝不会碰到右上角的头像 */
+    /* 【安卓滚动修复核心】 */
+    height: 0 !important; /* 强制高度为0，由flex撑开，触发滚动 */
+    min-height: 0 !important; 
+    overflow-y: auto !important; /* 必须是 auto */
+    -webkit-overflow-scrolling: touch !important; /* iOS 惯性滚动 */
+    touch-action: pan-y !important; /* 允许垂直触摸操作 */
+    
+    /* 顶部留白，避开头像 */
     padding-top: 220px !important; 
-    
     padding-bottom: 20px;
     padding-left: 20px;
     padding-right: 20px;
     
     display: flex;
     flex-direction: column;
-    justify-content: flex-end; /* 消息从底部开始堆叠 */
+    justify-content: flex-start; /* 改为从上往下排，防止安卓回弹问题 */
     gap: 15px;
     
-    /* 顶部渐变遮罩，让滚上去的消息慢慢消失 */
+    /* 顶部渐变遮罩 */
     mask-image: linear-gradient(to bottom, transparent 0%, black 15%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%);
+}
+
+/* 【新增】强制显示滚动条 (Webkit) */
+.video-log-container::-webkit-scrollbar {
+    width: 4px;
+    display: block; /* 强制显示 */
+}
+.video-log-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
 }
 
 /* 7. 视频通话气泡 */
@@ -26285,6 +26299,8 @@ let nextSoupConfig = {
 
 let currentDoujinShareId = null;
 
+let isBackgroundKeepAliveEnabled = false; // [新增] 后台保活状态
+
 // 朋友圈自动设置 (默认全关闭)
 let momentsSettings = {
     autoCommentUser: false,
@@ -28507,6 +28523,8 @@ loversTransactions: loversTransactions, // 保存情侣账本数据
 
 storePendingShipmentItems: storePendingShipmentItems,
 
+isBackgroundKeepAliveEnabled: isBackgroundKeepAliveEnabled,
+
 diaryGlobalSettings: diaryGlobalSettings, // <--- 新增这一行
     diaryStylesLibrary: diaryStylesLibrary,  
 
@@ -28776,6 +28794,11 @@ worldviews = settings.worldviews || [];
 
 forumRules = loadedForumRules || []; 
 
+if (settings) {
+    isBackgroundKeepAliveEnabled = settings.isBackgroundKeepAliveEnabled || false;
+    const bgToggle = document.getElementById('backgroundKeepAliveToggle');
+    if (bgToggle) bgToggle.checked = isBackgroundKeepAliveEnabled;
+}
 
 // --- ↓↓↓ 在 loadData 函数中，用这段代码替换 forumSettings 的加载逻辑 ↓↓↓ ---
 
@@ -29034,6 +29057,7 @@ if (loadedGameApiSettings) {
                     document.getElementById('apiTemperature').value = loadedApiSettings.apiTemperature || 0.9;
                     aiTimePerceptionEnabled = loadedApiSettings.aiTimePerceptionEnabled !== false;
                     document.getElementById('aiTimePerceptionToggle').checked = aiTimePerceptionEnabled;
+                   
                 }
                 // --- 新增：同步API设置到购物App ---
 if (loadedApiSettings) {
@@ -37961,6 +37985,24 @@ window.onload = async function() {
         setActivePage('homeScreen');
 
 checkPeriodReminder(); 
+
+if (isBackgroundKeepAliveEnabled) {
+    // 定义一个一次性监听器
+    const autoStartAudio = () => {
+        enableBackgroundSystem(); // 启动音频和通知权限
+        console.log("检测到用户交互，已恢复后台保活状态");
+        // 移除监听器，确保只执行一次
+        document.removeEventListener('click', autoStartAudio);
+        document.removeEventListener('touchstart', autoStartAudio);
+    };
+
+    // 监听任意点击或触摸
+    document.addEventListener('click', autoStartAudio);
+    document.addEventListener('touchstart', autoStartAudio);
+    
+    // 如果用户是在设置页刷新，可能希望看到提示
+    // showToast("点击页面任意位置以恢复后台保活");
+}
 
         audioElement = document.getElementById('audioPlayer');
         audioElement.addEventListener('play', () => {
@@ -67321,7 +67363,7 @@ async function sendUserVideoMessage() {
 }
 
 /**
- * 请求 AI 视频回复 (核心 Prompt 修改)
+ * [V5 记忆融合 + 人称修正版] 请求 AI 视频回复
  */
 async function requestAIVideoResponse(userContent) {
     if (aiReplyingSet.has(videoCallFriendId)) return;
@@ -67337,46 +67379,97 @@ async function requestAIVideoResponse(userContent) {
     loadingDiv.id = 'videoLoading';
     loadingDiv.textContent = "对方正在看着屏幕...";
     logContainer.appendChild(loadingDiv);
+    // 滚动到底部
+    logContainer.scrollTop = logContainer.scrollHeight;
     
     try {
-        const persona = userPersonas.find(p => p.id === (friend.activeUserPersonaId || 'default_user')) || userProfile;
+        const personaId = friend.activeUserPersonaId || 'default_user';
+        const persona = userPersonas.find(p => p.id === personaId) || userProfile;
         
-        // 获取最近的视频聊天记录作为上下文
-        const recentLogs = Array.from(document.querySelectorAll('#videoCallLog .video-bubble, #videoCallLog .video-narration'))
-            .slice(-10)
+        // --- 【核心修改 1：记忆读取与融合】 ---
+        
+        // 1. 读取主聊天界面的历史记录 (取最近 50 条)
+        const mainChatHistoryRaw = chatHistories[videoCallFriendId] || [];
+        // 过滤掉本次通话的记录(避免重复)，只看之前的聊天
+        const mainChatHistory = mainChatHistoryRaw
+            .filter(m => m.contentType !== 'voice_call_dialogue') 
+            .slice(-50) 
+            .map(m => {
+                const senderName = m.type === 'sent' ? persona.name : friend.name;
+                // 使用摘要函数处理图片/语音等内容
+                return `[${formatTimestampForAI(m.timestamp)}] ${senderName}: ${summarizeMessageContentForAI(m)}`;
+            });
+
+        // 2. 读取本次视频通话的实时记录 (全部读取)
+        // 我们直接从 chatHistories 里找类型为 'voice_call_dialogue' 的最新记录
+        // 注意：这里我们假设界面上的 log 已经是最新的，直接从 DOM 取更准确实时性
+        const currentCallLogs = Array.from(document.querySelectorAll('#videoCallLog .video-bubble, #videoCallLog .video-narration'))
             .map(el => {
+                // 排除掉 loading 提示
+                if (el.id === 'videoLoading') return null;
+                
                 const isUser = el.classList.contains('user');
                 const isNarration = el.classList.contains('video-narration');
-                if (isNarration) return `(画面/动作): ${el.textContent}`;
-                return `${isUser ? '用户' : '你'}: ${el.textContent}`;
-            }).join('\n');
+                
+                if (isNarration) return `(旁白/动作): ${el.textContent}`;
+                return `${isUser ? persona.name : friend.name}: "${el.textContent}"`;
+            })
+            .filter(Boolean); // 过滤掉 null
+
+        // 3. 合并上下文 (主聊天 + 本次通话)
+        // 按照用户设置的记忆条数进行最终截取，但优先保留本次通话内容
+        const memoryLimit = parseInt(settings.memoryMessagesCount) || 20;
+        
+        // 先把两部分拼起来
+        const fullContextArray = [...mainChatHistory, "--- 以下是正在进行的视频通话 ---", ...currentCallLogs];
+        
+        // 截取最后 N 条作为最终发给 AI 的内容
+        // 注意：如果通话记录很长，会挤掉主聊天记录，这是符合逻辑的（当下最重要）
+        const finalContext = fullContextArray.slice(-(memoryLimit + 10)).join('\n');
+
+        // --- 【修改结束】 ---
+
+        // 获取当前通话时长
+        const callDuration = document.getElementById('videoDuration').textContent;
+
+        // 获取时间信息
+        let timeContext = '';
+        if (aiTimePerceptionEnabled) {
+            const timeInfo = getDetailedTimeInfo();
+            timeContext = `当前时间: ${timeInfo.fullDate} ${timeInfo.time} (${timeInfo.timeOfDay})`;
+        }
 
         const prompt = `
 【模式】: **视频通话 (Video Call)**
 【你的身份】: "${friend.name}" (人设: ${friend.role})
-【对话对象】: "${persona.name}"
-【当前情景】: 你们正在进行视频通话。你能看到对方的脸和环境，对方也能看到你。
+【对话对象】: "${persona.name}" (人设: ${persona.personality || '普通人'})
+【通话状态】: 通话中 (已持续 ${callDuration})
+${timeContext}
 
-【上下文回顾】:
-${recentLogs}
+【【【记忆与上下文 (Memory Context)】】】
+${finalContext}
+
 【用户刚刚说/做】: "${userContent}"
 
-【【【视频通话演绎铁律】】】
-1.  **【视觉化旁白】**: 你的回复必须包含大量的**视觉描写**。因为是视频，你要描写你的**表情、眼神、手势**以及你**背景里的环境**。
-    -   *示例*: (凑近镜头看了看) / (害羞地移开视线) / (拿起手边的水杯喝了一口) / (指着身后的猫咪)。
-2.  **【眼神交流】**: 旁白要体现出你们通过屏幕的眼神接触。
-3.  **【格式要求】**:
-    -   你的回复必须是一个 JSON 数组。
-    -   包含 \`dialogue\` (你的话) 和 \`narration\` (画面动作描写)。
-    -   **narration (旁白)**: 用于描写画面。例如："他撑着下巴，笑盈盈地看着镜头。"
-    -   **dialogue (对话)**: 正常的口语交流。
+【【【叙事视角与人称铁律 (Perspective Rules - CRITICAL)】】】
+1.  **旁白 (Narration)**: 必须使用**第三人称**描写你的动作/神态。
+    -   用 "**他/她**" 指代你自己 (${friend.name})。
+    -   用 "**你**" 指代屏幕对面的用户 (${persona.name})。
+    -   *正确示例*: "他凑近屏幕看了看你，嘴角微微上扬。"
+    -   *错误示例*: "我凑近屏幕看了看..." (禁止用“我”做旁白主语)
+2.  **对话 (Dialogue)**: 正常的第一人称口语交流。
+    -   *示例*: "你看得清我吗？"
+
+【【【视频演绎要求】】】
+1.  **视觉描写**: 多描写透过镜头看到的细节（你的表情、眼神、背景环境、光线）。
+2.  **眼神交流**: 经常描写注视镜头（即注视用户）的动作。
+3.  **格式**: 返回 JSON 数组，包含 \`dialogue\` 和 \`narration\`。
 
 【JSON格式示例】:
 [
-  { "type": "narration", "content": "他调整了一下手机角度，露出刚洗完澡湿漉漉的头发，有些慵懒地靠在枕头上。" },
-  { "type": "dialogue", "content": "怎么这么晚才打过来？" },
-  { "type": "narration", "content": "屏幕里的他微微皱眉，似乎在仔细观察你的脸色。" },
-  { "type": "dialogue", "content": "你看上去有点累啊。" }
+  { "type": "narration", "content": "他伸手调整了一下摄像头，昏黄的灯光映在他脸上。" },
+  { "type": "dialogue", "content": "喂？听得到吗？" },
+  { "type": "narration", "content": "看着屏幕里的你，他的眼神变得温柔起来。" }
 ]
 
 现在，请生成回复。`;
@@ -67387,31 +67480,41 @@ ${recentLogs}
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.95
+                temperature: 0.9
             })
         });
 
+        if (!response.ok) throw new Error("API Error");
+
         const data = await response.json();
         const contentStr = data.choices[0].message.content;
-        const jsonMatch = contentStr.match(/\[[\s\S]*\]/);
         
-        if (jsonMatch) {
-            const actions = JSON.parse(jsonMatch[0]);
-            
-            // 移除 loading
-            if (document.getElementById('videoLoading')) document.getElementById('videoLoading').remove();
+        // 尝试解析 JSON
+        let actions = [];
+        try {
+            const jsonMatch = contentStr.match(/\[[\s\S]*\]/);
+            if (jsonMatch) actions = JSON.parse(jsonMatch[0]);
+            else throw new Error("Format Error");
+        } catch (e) {
+            // 兜底：如果不是JSON，就当纯对话
+            actions = [{ type: 'dialogue', content: contentStr }];
+        }
+        
+        // 移除 loading
+        const loader = document.getElementById('videoLoading');
+        if (loader) loader.remove();
 
-            for (const action of actions) {
-                await new Promise(r => setTimeout(r, 800)); // 模拟节奏
-                addVideoLogItem(action, 'ai');
-                // 保存记录 (复用 voice_call_dialogue 类型，因为本质一样)
-                saveChatMessage(videoCallFriendId, 'received', action.content, '', friend.id, 'voice_call_dialogue');
-            }
+        for (const action of actions) {
+            await new Promise(r => setTimeout(r, 800)); 
+            addVideoLogItem(action, 'ai');
+            // 保存记录
+            await saveChatMessage(videoCallFriendId, 'received', action.content, '', friend.id, 'voice_call_dialogue');
         }
 
     } catch (e) {
         console.error(e);
-        if (document.getElementById('videoLoading')) document.getElementById('videoLoading').textContent = "(信号不佳...)";
+        const loader = document.getElementById('videoLoading');
+        if (loader) loader.textContent = "(信号中断...)";
     } finally {
         aiReplyingSet.delete(videoCallFriendId);
     }
@@ -68194,13 +68297,16 @@ function sendRealNotification(title, body, icon) {
     }
 }
 
-// 控制后台保活开关
-function toggleBackgroundSystem(checkbox) {
+// [修改版] 控制后台保活开关 (带保存功能)
+async function toggleBackgroundSystem(checkbox) {
+    isBackgroundKeepAliveEnabled = checkbox.checked;
+    await saveData(); // 保存状态到数据库
+
     if (checkbox.checked) {
-        enableBackgroundSystem(); // 调用之前定义的开启函数
+        enableBackgroundSystem(); // 尝试开启
     } else {
         if (window.keepAliveAudio) {
-            window.keepAliveAudio.pause(); // 关闭时暂停音频
+            window.keepAliveAudio.pause(); // 关闭音频
             showToast("后台保活已关闭");
         }
     }
