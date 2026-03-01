@@ -22133,6 +22133,10 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 <!-- ↑↑↑ 新代码到此结束 ↑↑↑ -->
                     <div class="chat-functions" id="chatFunctions">
                         <div class="function-menu">
+                        <div class="function-item" onclick="regenerateLatestAiResponse()">
+            <div class="function-icon"> <i class="ri-refresh-line"></i> </div>
+            <div class="function-label">重回</div>
+        </div>
                             <div class="function-item" onclick="selectPhoto()"><div class="function-icon"> <i class="ri-image-line"></i> </div><div class="function-label">照片</div></div>
                             <div class="function-item" onclick="openCameraModal()"><div class="function-icon"> <i class="ri-camera-line"></i> </div><div class="function-label">拍摄</div></div>
                             <div class="function-item" onclick="startVoiceCall()"><div class="function-icon"> <i class="ri-phone-line"></i> </div><div class="function-label">语音通话</div></div>
@@ -29762,11 +29766,9 @@ async function requestPersistentStorage() {
 requestPersistentStorage();
 
 const CURRENT_ANNOUNCEMENT = {
-    version: 16, // 版本号升级
+    version: 17, // 版本号升级到17，确保用户刷新后能看到新公告
     title: "jrsy 系统更新公告",
-    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>12.2元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能/优化</h3><div style="margin-bottom:10px;font-weight:bold;">【新功能不知道怎么用的看下群相册的教程】</div><ul class="update-list"><li>1. 新增总结提示词，可以输入提示词进行总结，控制总结长度和风格 </li><li>2. 美化设置里缺少的几个功能图标都补上了  </li><li>3. 直播app还没有做好，目前只可以看直播，最好不要打开使用，如果实在想玩可以进去摸索一下看看直播。 </li><li>4. <b>入梦功能大升级</b>：含日夜模式/白噪音/存档读档。<b>①普通梦境</b>：可以进入char的梦境，可以给三个关键词来编织梦境，梦境服务于char，所以在梦境里的行为受到限制，只能通过选择选项来行动，三个选项里有两个是char期望的，还有一个是char潜意识里抗拒的，如果选错就会梦醒被踢出梦境。
-<b>②时空救赎</b>：可以穿越到char和你还没遇到的时间节点，会自动识别十个他人生灰暗的时刻，可以选择实体穿越或者幽灵穿越，回到过去陪伴他，但行动依旧是有限制的，虽然可以自己输入，但每一轮都会生成限制规则，需要遵守限制，如果救赎失败就需要重开了。
-</li></ul></div>`
+    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>12.2元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能/优化</h3><div style="margin-bottom:10px;font-weight:bold;">【新功能不知道怎么用的看下群相册的教程】</div><ul class="update-list"><li>1. 优化掉格式和失忆的情况，现在掉格式会比较少，总结也在读，但是长时间不聊再聊也会掉一轮。</li><li>2. 把心声好感度后面的描述加回来了</li><li>3. 优化了发表情包，减少了发不存在表情包的问题</li><li>4. 新增世界书选择可以选择文件夹里的子文件</li><li>5. 新增重回按键在加号功能栏，比之前更加方便</li></ul></div>`
 };
 
         // 全局变量
@@ -37886,58 +37888,94 @@ function toggleWbFolder(header) {
         }
         
         function openWorldBookBindingModal() {
-            const friend = friends.find(f => f.id === currentChatFriendId);
-            if (!friend) return;
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
 
-            const container = document.getElementById('worldBookBindingList');
-            container.innerHTML = '';
-            const boundBookIds = new Set(friend.worldBookIds || []);
-            const boundFolderIds = new Set(friend.boundFolderIds || []);
+    const container = document.getElementById('worldBookBindingList');
+    container.innerHTML = '';
+    const boundBookIds = new Set(friend.worldBookIds ||[]);
+    const boundFolderIds = new Set(friend.boundFolderIds ||[]);
 
-            worldBookFolders.forEach(folder => {
-                const isFolderChecked = boundFolderIds.has(folder.id);
-                const item = document.createElement('div');
-                item.className = 'multi-select-item';
-                item.innerHTML = `<input type="checkbox" data-type="folder" id="wbf-${folder.id}" value="${folder.id}" ${isFolderChecked ? 'checked' : ''}>
-                                  <label for="wbf-${folder.id}">[文件夹] ${folder.name}</label>`;
-                container.appendChild(item);
-            });
-            
-            const uncategorizedBooks = worldBooks.filter(wb => !wb.folderId || !worldBookFolders.some(f => f.id === wb.folderId));
-            uncategorizedBooks.forEach(book => {
-                const isChecked = boundBookIds.has(book.id);
-                const item = document.createElement('div');
-                item.className = 'multi-select-item';
-                item.innerHTML = `<input type="checkbox" data-type="book" id="wb-${book.id}" value="${book.id}" ${isChecked ? 'checked' : ''}>
-                                  <label for="wb-${book.id}">${book.name}</label>`;
-                container.appendChild(item);
-            });
+    // 1. 遍历并渲染所有的文件夹
+    worldBookFolders.forEach(folder => {
+        const isFolderChecked = boundFolderIds.has(folder.id);
+        
+        // 渲染文件夹本身
+        const folderItem = document.createElement('div');
+        folderItem.className = 'multi-select-item';
+        folderItem.innerHTML = `
+            <input type="checkbox" data-type="folder" id="wbf-${folder.id}" value="${folder.id}" ${isFolderChecked ? 'checked' : ''} onchange="toggleFolderBooks('${folder.id}', this.checked)">
+            <label for="wbf-${folder.id}" style="font-weight: bold; color: #333;">📁 ${folder.name}</label>
+        `;
+        container.appendChild(folderItem);
 
-            if (container.innerHTML === '') {
-                 container.innerHTML = '<div style="color: #999;">暂无世界书或文件夹可绑定</div>';
-            }
-            document.getElementById('worldBookBindingModal').classList.add('show');
-        }
+        // 2. 查找并渲染属于该文件夹的子文件（世界书）
+        const booksInFolder = worldBooks.filter(wb => wb.folderId === folder.id);
+        booksInFolder.forEach(book => {
+            // 如果文件夹被选中，或者该书本身被单独选中，则勾选
+            const isChecked = isFolderChecked || boundBookIds.has(book.id);
+            const item = document.createElement('div');
+            item.className = 'multi-select-item';
+            item.style.paddingLeft = '25px'; // 缩进，体现层级关系
+            item.innerHTML = `
+                <input type="checkbox" data-type="book" class="wbb-child-of-${folder.id}" id="wb-${book.id}" value="${book.id}" ${isChecked ? 'checked' : ''} onchange="checkFolderStatus('${folder.id}')">
+                <label for="wb-${book.id}" style="color: #666;">📄 ${book.name}</label>
+            `;
+            container.appendChild(item);
+        });
+    });
+    
+    // 3. 渲染没有被放进任何文件夹的“未分类世界书”
+    const uncategorizedBooks = worldBooks.filter(wb => !wb.folderId || !worldBookFolders.some(f => f.id === wb.folderId));
+    if (uncategorizedBooks.length > 0) {
+        // 添加一个分割标题
+        const uncatHeader = document.createElement('div');
+        uncatHeader.style.cssText = 'padding: 10px 0 5px 0; color: #999; font-size: 12px; font-weight: bold;';
+        uncatHeader.innerHTML = '未分类世界书';
+        container.appendChild(uncatHeader);
+
+        uncategorizedBooks.forEach(book => {
+            const isChecked = boundBookIds.has(book.id);
+            const item = document.createElement('div');
+            item.className = 'multi-select-item';
+            item.innerHTML = `
+                <input type="checkbox" data-type="book" id="wb-${book.id}" value="${book.id}" ${isChecked ? 'checked' : ''}>
+                <label for="wb-${book.id}">📄 ${book.name}</label>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    if (container.innerHTML === '') {
+         container.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">暂无世界书或文件夹可绑定</div>';
+    }
+    document.getElementById('worldBookBindingModal').classList.add('show');
+}
         
         function closeWorldBookBindingModal() {
             document.getElementById('worldBookBindingModal').classList.remove('show');
         }
         
-        function confirmWorldBookBinding() {
-            const friend = friends.find(f => f.id === currentChatFriendId);
-            if (!friend) return;
-            
-            const selectedBooks = [];
-            document.querySelectorAll('#worldBookBindingList input[data-type="book"]:checked').forEach(checkbox => selectedBooks.push(checkbox.value));
-            friend.worldBookIds = selectedBooks;
-            
-            const selectedFolders = [];
-            document.querySelectorAll('#worldBookBindingList input[data-type="folder"]:checked').forEach(checkbox => selectedFolders.push(checkbox.value));
-            friend.boundFolderIds = selectedFolders;
-            
-            showAlert('绑定成功！');
-            closeWorldBookBindingModal();
-        }
+        async function confirmWorldBookBinding() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+    
+    // 收集独立选中的世界书
+    const selectedBooks =[];
+    document.querySelectorAll('#worldBookBindingList input[data-type="book"]:checked').forEach(checkbox => selectedBooks.push(checkbox.value));
+    friend.worldBookIds = selectedBooks;
+    
+    // 收集选中的文件夹
+    const selectedFolders = [];
+    document.querySelectorAll('#worldBookBindingList input[data-type="folder"]:checked').forEach(checkbox => selectedFolders.push(checkbox.value));
+    friend.boundFolderIds = selectedFolders;
+    
+    // 【关键修复】确保写入数据库，永久生效
+    await saveData(); 
+    
+    showAlert('绑定成功！');
+    closeWorldBookBindingModal();
+}
 
         function openDiary() { 
     setActivePage('diaryScreen');
@@ -79497,6 +79535,66 @@ function continueLastRedemption() {
     }
     
     showToast("已恢复之前的进度");
+}
+
+/**
+ * 辅助：勾选/取消勾选文件夹时，同步底下的所有子文件
+ */
+function toggleFolderBooks(folderId, isChecked) {
+    const checkboxes = document.querySelectorAll(`.wbb-child-of-${folderId}`);
+    checkboxes.forEach(cb => {
+        cb.checked = isChecked;
+    });
+}
+
+/**
+ * 辅助：取消勾选某个子文件时，自动取消父文件夹的勾选状态
+ */
+function checkFolderStatus(folderId) {
+    const folderCheckbox = document.getElementById(`wbf-${folderId}`);
+    const childCheckboxes = document.querySelectorAll(`.wbb-child-of-${folderId}`);
+    
+    if (folderCheckbox) {
+        // 只有当所有子文件都被勾选时，文件夹才显示为勾选
+        const allChecked = Array.from(childCheckboxes).every(cb => cb.checked);
+        folderCheckbox.checked = allChecked;
+    }
+}
+
+/**
+ * [新增] 触发最新一轮 AI 消息的重回 (用于加号菜单)
+ * 它会自动连带撤销那一整轮的好几条消息。
+ */
+function regenerateLatestAiResponse() {
+    // 1. 收起加号菜单
+    hideFunctionMenus();
+
+    // 2. 安全检查：确保在聊天界面，且AI没在生成中
+    if (!currentChatFriendId) return;
+    if (aiReplyingSet.has(currentChatFriendId)) {
+        return showAlert('AI正在回复中，请稍后重试。');
+    }
+
+    const history = chatHistories[currentChatFriendId] ||[];
+
+    // 3. 从聊天记录最后一条开始往前找，定位到最新的一条 AI 消息
+    let lastAiMsgId = null;
+    for (let i = history.length - 1; i >= 0; i--) {
+        if (history[i].type === 'received') {
+            lastAiMsgId = history[i].id;
+            break;
+        }
+    }
+
+    // 4. 如果没找到，给个提示
+    if (!lastAiMsgId) {
+        return showAlert("当前没有可重回的AI回复哦。");
+    }
+
+    // 5. 核心：直接调用你原有的重试函数！
+    // 因为你的 regenerateAiResponse 内部已经写好了循环，
+    // 它拿到这个 ID 后，会自动把前后挨着的 AI 气泡一起删除，并重新请求。
+    regenerateAiResponse(lastAiMsgId);
 }
 
     </script>
