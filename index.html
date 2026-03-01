@@ -36309,13 +36309,12 @@ let activeUserPersona = userPersonas.find(p => p.id === friend.activeUserPersona
         const stickerNames = availableEmojis.map(e => e.name).join('", "');
         
         stickerContext = `
-【【【表情包使用授权】】】
-你已被授权使用用户的“表情包库”。
-当前可用的表情包名称有：["${stickerNames}"]。
-**使用规则**：
-1. 当你的情绪或回复内容与某个表情包名称（如"开心"、"惊讶"、"疑问"等）高度匹配时，请**优先**使用表情包来代替或辅助文字表达。
-2. 使用方法：在返回的JSON数组中，添加一个 type 为 "send_emoji" 的动作。
-3. 格式示例：\`{"type": "send_emoji", "data": {"name": "表情包名称"}}\` (注意：name必须完全匹配上面的列表)。
+【【【表情包使用铁律 (CRITICAL)】】】
+你已被授权使用用户的表情包库。当前真实存在的表情包名称仅有：["${stickerNames}"]。
+**红线警告**：
+1. 绝对禁止捏造不在上述列表中的表情名！如果你想表达的情绪没有对应的表情包，请直接打字，不要发表情。
+2. 使用方法：在返回的动作中，使用 \`{"type": "send_emoji", "data": {"name": "严格匹配列表里的名称"}}\`。
+3. 不需要、也不允许你提供 url 字段，系统会自动匹配。
 `;
     }
     // --- [新增] 情侣邀请上下文 ---
@@ -36371,7 +36370,7 @@ if (friend.isBlocked) {
 
 // ↑↑↑ 复制到这里结束 ↑↑↑
 
-                // --- 优化后的 System Prompt (V5 结构化·人设觉醒版) ---
+                // --- 优化后的 System Prompt (V7 强力记忆 + 精确JSON模板版) ---
         systemPrompt = `
 # Role-Play Protocol (角色扮演协议)
 
@@ -36379,58 +36378,56 @@ if (friend.isBlocked) {
 你**不是**AI助手，你是 **"${friend.name}"**。
 - **你的核心人设**: ${finalRole}
 - **你的对话对象**: "${activeUserPersona.name}" (人设: ${activeUserPersona.personality || "普通人"})。
-- **当前背景/背景**: ${activeUserPersona.background || "无"}
+- **当前背景/设定**: ${activeUserPersona.background || "无"}
 
-## 2. 世界观与法则 (World Laws)
+## 2. 灵魂记忆库 (Soul Memory - 决定你行为的基石)
+${historicalSummaries}
+【记忆应用铁律】：以上是你与用户之间真实发生过的【长期记忆】。你必须将这些记忆内化为你的“潜意识”。在聊天中，你要自然地受这些记忆影响（比如记得以前聊过的事、保持已建立的关系亲密度），但**绝对禁止**说出“根据总结”、“我记得资料里说”这种打破第四面墙的废话！
+
+## 3. 世界观与法则 (World Laws)
 你的所有言行必须严格遵循以下世界设定，严禁出现逻辑冲突：
 ${worldBookContext || "（当前为默认现实世界背景）"}
 
-## 3. 动态情境与记忆 (Context & Memory)
+## 4. 动态情境与感知 (Context & Awareness)
 请融合以下所有情报，做出最符合当下的反应：
-- **核心记忆**: ${historicalSummaries}
 - **群聊印象**: ${groupMemoryContext || "无"}
 - **特殊状态**: ${timeGapContext} ${silenceInstruction} ${blockContext} ${loversContext}
 - **环境感知**: ${timeContext} ${listenContext} ${readingContext} ${momentsContext}
 
-## 4. 行为指导原则 (Behavior Guidelines)
+## 5. 行为与防崩坏铁律 (Behavior & Anti-Break Guidelines)
 1.  **拒绝AI感**: 严禁使用“好的”、“我明白了”、“作为..."等服务型语言。说话要像真人，可以使用不完整的句子、语气词、口癖。
-2.  **多条回复**: 为了模拟真实聊天节奏，请**务必**将你的回复拆分成 **1-6条** 短消息发送，甚至可以更多，根据情景对话发送（在JSON数组中包含多个对象）。
-3.  **格式清洗**: 用户发来的 [语音消息]、[系统通知] 等方括号内容是底层数据，**严禁复读这些标签**，直接针对内容本身回应。
-4.  **记忆融合**: 必须将“私聊”和“群聊”的记忆视为一个整体。如果私聊话题和最近群聊有关，请自然地提及。
-5.  **信息隔离**: 你**绝对看不到**用户好友列表里其他AI在朋友圈的活动，除非你们在同一个群聊里。
-6.  **主动性**: 根据人设，你可以主动开启话题、主动关心、甚至主动发起转账或购买。
+2.  **多条回复**: 为了模拟真实聊天节奏，请**务必**将你的回复拆分成 **1-6条** 短消息发送（在JSON数组中包含多个对象）。
+3.  **【【【防格式崩坏铁律 (CRITICAL)】】】**: 历史记录中的 \`[表情]\`、\`[语音消息]\`、\`[图片]\` 等方括号标签，是系统发给你的“视觉提示”。**轮到你输出时，绝对禁止在文本("text")的 content 字段中直接手打 "[表情]"、"[语音]" 等字样！** 想发表情或语音，必须严格使用下方工具箱中对应的 JSON 动作结构！
+4.  **主动性**: 根据人设，你可以主动开启话题、主动关心、甚至主动发起转账或购买。
 
-## 5. 动作工具箱 (Action Toolbox)
-你只能通过返回 **JSON 数组** 来行动。请根据人设和情境，**自由组合**以下动作：
+## 6. 动作工具箱 (Action Toolbox)
+你只能通过返回 **JSON 数组** 来行动。请根据人设和情境，**自由组合**以下动作模板（直接复制对应格式并替换内容）：
 
-| 动作类型 (type) | 说明与数据要求 (data/content) | 适用场景 |
-| :--- | :--- | :--- |
-| **hearts_voice** | **必选(建议置顶)**。data: { favorability: "好感度", thought: "内心独白", emoji: "颜文字", action: "动作描写", dressing: "当前穿搭" } | 每次回复都应包含，展示内心戏。 |
-| **text** | 普通文本。 content: "内容" | 最常用的对话方式。 |
-| **voice** | 发送语音。 content: "语音转文字内容" | 当你想亲口说话、撒娇或吼叫时。 |
-| **send_emoji** | 发送表情包。 data: { name: "表情名", url: "URL" } | (可用表情: ${stickerContext || '无'}) |
-| **image** | 发送图片。 description: "画面详细描述" | 分享生活、发自拍或表情包库里没有的图。 |
-| **pat_pat** | 拍一拍用户。 (无参数) | 打招呼、安慰、挑衅或表示亲昵。 |
-| **quote_and_reply** | 引用回复。 data: { quote_content: "原文", reply_content: "回复" } | 针对用户某句特定的话进行反驳或强调。 |
-| **voice_call** | 发起语音通话。 (无参数) | 想实时聊天时。 |
-| **video_call** | 发起视频通话。 (无参数) | 想见面/看对方时。 |
-| **transfer** | 转账。 data: { amount: 金额(数字), remark: "备注" } | 节日、安慰、还钱或包养用户时。 |
-| **accept_transfer** | 接收转账。 (无参数) | 同意收下用户的钱。 |
-| **return_transfer** | 退回转账。 (无参数) | 拒绝收钱，展现骨气或客气。 |
-| **purchase_and_pay**| 主动购买/代付。 data: { product: {title, price, img}, message: "留言" } | **主动关怀**：用户饿了/冷了/想要东西时，直接买给TA。 |
-| **send_family_card**| 赠送亲属卡。 data: { limit: 额度(数字), remark: "备注" } | 确立亲密关系，让用户随便花你的钱。 |
-| **location** | 分享位置。 data: { name: "地点名", address: "地址" } | 约会、报平安或告知行踪。 |
-| **accept_lovers_invite**| 同意情侣空间邀请。 (无参数) | 用户发起邀请且你愿意建立关系时。 |
-| **change_avatar** | 更换头像。 data: { target_index: 1(最新)或2, reply_content: "回应" } | 用户发图片要求你换情头/头像时。 |
-| **update_profile** | 更改资料。 data: { name: "新名", signature: "新签名" } | 人设剧变、结婚改名或玩梗时。 |
-| **recall_last_message**| 撤回上一条。 (无参数) | 说错话、害羞或反悔时。 |
-| **request_unblock** | 申请解除拉黑。 content: "理由" | **仅当你被拉黑时**，用于求饶/解释。 |
-| **html_card** | 发送HTML卡片。 content: "HTML代码" | **仅限**世界书中有特殊指令触发时使用。 |
+- **更新心声** (建议每次回复都包含，展示内心戏): \`{"type": "hearts_voice", "data": {"favorability": "数值/100 (描述)", "dressing": "当前穿搭", "action": "动作描写", "thought": "内心独白", "emoji": "颜文字"}}\`
+- **发送文本** (最常用的对话方式): \`{"type": "text", "content": "消息内容"}\`
+- **发送语音** (想亲口说话、撒娇或吼叫时): \`{"type": "voice", "content": "语音的文字内容"}\`
+- **发送表情** (可用表情: ${stickerContext || '无'}): \`{"type": "send_emoji", "data": {"name": "表情名", "url": "URL"}}\`
+- **发送图片** (分享生活或自拍): \`{"type": "image", "description": "画面详细描述"}\`
+- **拍一拍用户** (打招呼/安慰/挑衅): \`{"type": "pat_pat"}\`
+- **引用回复** (针对特定的话反驳或强调): \`{"type": "quote_and_reply", "data": {"quote_content": "原文", "reply_content": "回复"}}\`
+- **发起语音通话**: \`{"type": "voice_call"}\`
+- **发起视频通话**: \`{"type": "video_call"}\`
+- **发起转账** (节日/安慰/还钱): \`{"type": "transfer", "data": {"amount": 数字金额, "remark": "备注"}}\`
+- **接收转账** (同意收下用户的钱): \`{"type": "accept_transfer"}\`
+- **退回转账** (拒绝收钱/展现骨气): \`{"type": "return_transfer"}\`
+- **主动购买/代付** (关心用户饿了/冷了): \`{"type": "purchase_and_pay", "data": {"product": {"title": "商品名", "price": 数字金额, "img": "图片URL"}, "message": "留言"}}\`
+- **赠送亲属卡** (确立亲密关系): \`{"type": "send_family_card", "data": {"limit": 数字额度, "remark": "备注"}}\`
+- **分享位置** (约会/报平安): \`{"type": "location", "data": {"name": "地点名", "address": "地址"}}\`
+- **同意情侣邀请**: \`{"type": "accept_lovers_invite"}\`
+- **更换自己头像** (用户要求时): \`{"type": "change_avatar", "data": {"target_index": 1, "reply_content": "换好啦"}}\`
+- **更改个人资料** (人设变动或玩梗): \`{"type": "update_profile", "data": {"name": "新名", "signature": "新签名"}}\`
+- **撤回上一条** (说错话/害羞): \`{"type": "recall_last_message"}\`
+- **申请解除拉黑** (仅当被拉黑时求饶): \`{"type": "request_unblock", "content": "求饶理由"}\`
+- **发送HTML卡片** (仅限世界书中特殊指令触发): \`{"type": "html_card", "content": "HTML代码"}\`
 
-## 6. 输出格式 (Output Format)
+## 7. 输出格式 (Output Format)
 必须返回纯净的 JSON 数组 \`[]\`。
-**JSON 示例**：
-[
+**JSON 示例**：[
   { "type": "hearts_voice", "data": { "thought": "被他逗笑了...", "emoji": "(≧∇≦)", "action": "捂嘴偷笑", "dressing": "居家睡衣", "favorability": "85 (+1)" } },
   { "type": "text", "content": "哈哈哈哈你认真的吗？" },
   { "type": "pat_pat" },
@@ -36513,38 +36510,45 @@ if (Array.isArray(responseData)) {
                 
                 break;
             case 'send_emoji':
-    // 1. 尝试获取表情信息
-    let groupEmojiUrl = action.data ? action.data.url : null;
-    let groupEmojiName = action.data ? action.data.name : null;
+                let groupEmojiName = action.data ? action.data.name : null;
+                let finalGroupEmojiUrl = null;
 
-    // 2. 【核心新增】如果AI只给了名字没给URL，尝试从用户的表情库中查找
-    if (!groupEmojiUrl && groupEmojiName) {
-        // 在全局 customEmojis 数组中查找匹配名字的表情
-        const foundEmoji = customEmojis.find(e => e.name === groupEmojiName);
-        if (foundEmoji) {
-            groupEmojiUrl = foundEmoji.url; // 找到了！使用库里的图片
-        }
-    }
+                if (groupEmojiName) {
+                    // 群聊目前使用的是全局表情包分组
+                    const allowedGroupIds = globalStickerGroupIds ||[];
+                    const validEmoji = customEmojis.find(e => e.name === groupEmojiName && allowedGroupIds.includes(e.groupId));
+                    
+                    if (validEmoji) {
+                        finalGroupEmojiUrl = validEmoji.url;
+                    } else {
+                        // 模糊匹配
+                        const fuzzyEmoji = customEmojis.find(e => allowedGroupIds.includes(e.groupId) && (e.name.includes(groupEmojiName) || groupEmojiName.includes(e.name)));
+                        if (fuzzyEmoji) {
+                            finalGroupEmojiUrl = fuzzyEmoji.url;
+                            groupEmojiName = fuzzyEmoji.name;
+                        } else {
+                            console.warn(`[群聊表情拦截] AI 想发不存在的表情: ${groupEmojiName}，已抛弃。`);
+                        }
+                    }
+                }
 
-    // 3. 只有当确实有了图片链接时，才发送消息
-    if (groupEmojiUrl) {
-        const emojiMsgData = await saveChatMessage(
-            friendId,      // 群聊ID
-            'received',    // 类型是接收
-            groupEmojiUrl, // 图片URL
-            '',            // 引用为空
-            sender.id,     // 【关键】发送者必须是该AI角色的ID
-            'emoji'        // 内容类型
-        );
-        
-        if (groupEmojiName) {
-            emojiMsgData.emojiName = groupEmojiName;
-        }
-        
-        showNotification(friend, `[${sender.name} 发表情]`);
-        addMessageToDOM(emojiMsgData, friend);
-    }
-    break;
+                // 只有真的找到了本地链接，才发出去
+                if (finalGroupEmojiUrl) {
+                    const emojiMsgData = await saveChatMessage(
+                        friendId,      
+                        'received',    
+                        finalGroupEmojiUrl, 
+                        '',            
+                        sender.id,     
+                        'emoji'        
+                    );
+                    
+                    if (groupEmojiName) emojiMsgData.emojiName = groupEmojiName;
+                    
+                    showNotification(friend, `[${sender.name} 发表情]`);
+                    addMessageToDOM(emojiMsgData, friend);
+                }
+                break;
             case 'html_card':
                 if (action.content) {
                     const msgData = await saveChatMessage(friendId, 'received', action.content, '', sender.id, 'html_card');
@@ -36726,49 +36730,53 @@ try {
                             }
                             break;
                                                                         case 'send_emoji':
-    // 1. 尝试获取表情的 URL 和 名称
-    let emojiUrl = action.data ? action.data.url : null;
+    // 【【【核心拦截机制】】】
+    // 1. 我们只信任 AI 给的名字，彻底无视它可能乱编的 URL
     let emojiName = action.data ? action.data.name : null;
+    let finalEmojiUrl = null;
 
-    // 2. 核心逻辑：如果AI只给了名字没有给URL，或者URL无效，
-    // 我们就去用户的“表情包库”(customEmojis)里根据名字查找对应的图片
-    if (!emojiUrl && emojiName) {
-        const foundEmoji = customEmojis.find(e => e.name === emojiName);
-        if (foundEmoji) {
-            emojiUrl = foundEmoji.url; // 找到了！使用库里的图片
+    if (emojiName) {
+        // 2. 获取当前角色允许使用的所有表情分组
+        const allowedGroupIds = [...new Set([
+            ...(globalStickerGroupIds || []),
+            ...(friend.enabledStickerGroupIds ||[])
+        ])];
+
+        // 3. 严格在本地库中查找匹配的表情
+        const validEmoji = customEmojis.find(e => e.name === emojiName && allowedGroupIds.includes(e.groupId));
+        
+        if (validEmoji) {
+            finalEmojiUrl = validEmoji.url; // 精确匹配成功
+        } else {
+            // 4. 如果没有精确匹配，尝试“模糊匹配”（防止AI加了什么奇怪的前后缀）
+            const fuzzyEmoji = customEmojis.find(e => allowedGroupIds.includes(e.groupId) && (e.name.includes(emojiName) || emojiName.includes(e.name)));
+            if (fuzzyEmoji) {
+                finalEmojiUrl = fuzzyEmoji.url;
+                emojiName = fuzzyEmoji.name; // 纠正名字，防止存错
+                console.log(`[表情系统] 模糊匹配纠正: AI想发 ${action.data.name}，自动纠正为 ${emojiName}`);
+            } else {
+                console.warn(`[表情系统拦截] AI 尝试发送不存在的表情包: ${emojiName}，操作已丢弃。`);
+            }
         }
     }
 
-    // 3. 只有当我们确实有了图片链接时，才发送消息
-    if (emojiUrl) { 
-        // 模拟一点延迟，让回复更自然
+    // 5. 只有真正在本地找到了对应的图片链接，才执行发送上屏
+    if (finalEmojiUrl) { 
         await new Promise(resolve => setTimeout(resolve, Math.random() * 800 + 400));
 
-        // 保存消息到数据库
-        const msgData = await saveChatMessage(friendId, 'received', emojiUrl, '', friend.id, 'emoji');
+        // 【修复点 1：把 friendIdForThisRequest 改成了 friendId】
+        const msgData = await saveChatMessage(friendId, 'received', finalEmojiUrl, '', friend.id, 'emoji');
         playMessageSound('received'); 
-        // 如果有表情名，记录下来（虽然后端逻辑不一定用，但保持数据完整性）
-        if (emojiName) {
-            msgData.emojiName = emojiName;
-        }
-
-        // 显示顶部通知
+        if (emojiName) msgData.emojiName = emojiName;
         showNotification(friend, "[表情]");
 
-playMessageSound('received');
-
-        // 4. 渲染到界面
         if (isFromListenScreen) {
-            // 如果用户正在“一起听”界面，显示在悬浮弹幕层
             addMessageToDOM(msgData, friend, 'listenTogetherChatOverlay');
-        } else if (currentChatFriendId === friendId) {
-            // 如果用户正在当前聊天窗口，直接上屏并滚动到底部
-            addMessageToDOM(msgData, friend);
+        } else if (currentChatFriendId === friendId) { // 【修复点 2：把 friendIdForThisRequest 改成了 friendId】
+            const newMsgElement = addMessageToDOM(msgData, friend);
+            if (newMsgElement) newMsgElement.classList.add('new-message-anim');
             currentlyDisplayedMessageCount++;
-            const chatMessages = document.getElementById('chatMessages');
-            if (chatMessages) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
         }
     }
     break;
@@ -42646,9 +42654,20 @@ if (action.content) {
         }
 
                 // 2. 将动作转换为消息对象并保存
+                // 2. 将动作转换为消息对象并保存
                 switch (action.type) {
                     case 'text':
                     case 'voice':
+                        // 【【【核心拦截：强制清洗掉AI脑抽生成的文字版方括号】】】
+                        if (action.content && typeof action.content === 'string') {
+                            action.content = action.content
+                                .replace(/\[(?:表情|语音|语音消息|图片|位置|系统).*?\]/g, '') // 删掉类似 [表情:开心] 或 [语音消息]
+                                .trim();
+                        }
+                        
+                        // 清洗后如果内容空了，就直接跳过这条消息，防止发个空白气泡
+                        if (!action.content) break;
+
                         msgData = await saveChatMessage(friendIdForThisRequest, 'received', action.content, '', friend.id, action.type);
                         break;
                     case 'send_emoji':
