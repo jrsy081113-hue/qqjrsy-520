@@ -178,7 +178,7 @@ function injectCRDomElements() {
             <div id="crInputBox" class="cr-input-box">
                 <div id="crInputHint" style="color:#888; font-size:12px; text-align:center;">写下你的举动：</div>
                 <div class="cr-input-row">
-                    <input type="text" id="crActionInput" class="cr-input" placeholder="例如：我忍不住抱住了他...">
+                    <input type="text" id="crActionInput" class="cr-input" placeholder="例如：我忍不住抱住了他..." onclick="event.stopPropagation()">
                     <button class="cr-send-btn" onclick="submitCRUserAction(event)">回应</button>
                 </div>
             </div>

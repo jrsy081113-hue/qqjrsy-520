@@ -16870,11 +16870,23 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     z-index: 10000 !important;
 }
 
-/* 线下模式顶部导航栏：背景改为纯白色 */
-#offlineModeScreen .nav-bar {
+/* --- 线下模式沉浸式修复 --- */
+/* 1. 隐藏系统状态栏 */
+.phone.offline-app-active .status-bar {
+    display: none !important;
+}
+
+/* 2. 线下模式顶部导航栏：背景改为纯白色并顶到最上面 */
+.phone.offline-app-active #offlineModeScreen .nav-bar {
+    top: 0 !important;
+    height: calc(44px + env(safe-area-inset-top)) !important;
+    padding-top: env(safe-area-inset-top) !important;
     background-color: #ffffff !important;
-    /* 可选：如果你想去掉底部的分割线，可以把下面这行加上 */
-    /* border-bottom: none !important; */
+}
+
+/* 3. 修复线下模式内容区域的顶部留白，防止被导航栏遮挡 */
+.phone.offline-app-active #offlineModeScreen .wechat-content {
+    padding-top: calc(44px + env(safe-area-inset-top) + 20px) !important;
 }
 
 /* --- 情侣空间评论发送按钮（美化版） --- */
@@ -21860,6 +21872,19 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .baby-food-name { font-size: 12px; font-weight: bold; color: #555; margin-bottom: 5px; }
 .baby-food-price { font-size: 12px; color: #E76F51; font-weight: bold; font-family: monospace;}
 
+/* --- 彻底修复单人线下模式导航栏与内容留白 --- */
+#offlineModeScreen .nav-bar {
+    top: 0 !important; /* 强制贴顶，取代原来的30px */
+    height: calc(44px + env(safe-area-inset-top, 0px)) !important; /* 加上安全区高度 */
+    padding-top: env(safe-area-inset-top, 0px) !important; /* 避开刘海 */
+    background-color: #ffffff !important;
+}
+
+#offlineModeScreen .wechat-content {
+    /* 强制覆盖原本内联的 80px 留白，让内容完美衔接在导航栏下方 */
+    padding-top: calc(54px + env(safe-area-inset-top, 0px)) !important;
+}
+
     </style>
 
 </head>
@@ -22492,6 +22517,11 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 <div class="function-item" onclick="openReadTogetherBookshelf()">
     <div class="function-icon"><i class="ri-book-open-line"></i></div>
     <div class="function-label">一起看书</div>
+</div>
+
+<div class="function-item" onclick="openNotebookScreen()">
+    <div class="function-icon"><i class="ri-draft-line"></i></div>
+    <div class="function-label">记事本</div>
 </div>
 
                         </div>
@@ -23803,6 +23833,11 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">克隆音色设置</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
+            
+<div class="form-group-row clickable" onclick="handleFullScreenClick()">
+    <label class="form-label">全屏/安装到桌面</label>
+    <div class="form-value-display">点击开启 <i class="ri-fullscreen-fill"></i></div>
+</div>
         </div>
 
         <!-- 卡片 2：主动交互 -->
@@ -30047,6 +30082,33 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
+<!-- 放在 </body> 标签之前 -->
+<div id="installGuideModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+        <div class="modal-title">安装全屏版 jrsy</div>
+        <div id="installAndroidContent" style="display: none;">
+            <p style="font-size: 14px; color: #666; margin-bottom: 15px; text-align: left;">
+                Android 用户请按以下步骤隐藏地址栏：<br><br>
+                1. 点击浏览器右上角的 <b style="color:#000;">三个点 ⋮</b><br>
+                2. 找到并点击 <b style="color:#000;">“安装应用”</b> 或 <b style="color:#000;">“添加到主屏幕”</b><br>
+                3. 从桌面图标进入即可实现【全屏无地址栏】体验。
+            </p>
+        </div>
+        <div id="installIosContent" style="display: none;">
+            <p style="font-size: 14px; color: #666; margin-bottom: 15px; text-align: left;">
+                iOS 用户请按以下步骤操作：<br><br>
+                1. 点击浏览器底部的 <b style="color:#000;">分享图标 ⎋</b><br>
+                2. 向上滑动找到并点击 <b style="color:#000;">“添加到主屏幕”</b><br>
+                3. 确认后从桌面图标进入。
+            </p>
+        </div>
+        <div class="modal-buttons">
+            <button id="pwaInstallBtn" class="modal-btn modal-btn-confirm" style="display:none; background:#000; color:#fff; margin-bottom:10px;">立即安装</button>
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('installGuideModal').classList.remove('show')">我知道了</button>
+        </div>
+    </div>
+</div>
+
     <script>
     
     // 打字机效果
@@ -30221,9 +30283,9 @@ async function requestPersistentStorage() {
 requestPersistentStorage();
 
 const CURRENT_ANNOUNCEMENT = {
-    version: 17, // 版本号升级到17，确保用户刷新后能看到新公告
+    version: 18,
     title: "jrsy 系统更新公告",
-    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>12.2元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能/优化</h3><div style="margin-bottom:10px;font-weight:bold;">【新功能不知道怎么用的看下群相册的教程】</div><ul class="update-list"><li>1. 优化掉格式和失忆的情况，现在掉格式会比较少，总结也在读，但是长时间不聊再聊也会掉一轮。</li><li>2. 把心声好感度后面的描述加回来了</li><li>3. 优化了发表情包，减少了发不存在表情包的问题</li><li>4. 新增世界书选择可以选择文件夹里的子文件</li><li>5. 新增重回按键在加号功能栏，比之前更加方便</li></ul></div>`
+    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>12.2元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能/优化</h3><div style="margin-bottom:10px;font-weight:bold;">【新功能不知道怎么用的看下群相册的教程】</div><ul class="update-list"><li>1. 新增群聊线下，char的记事本功能</li><li>2. 修复表情包导入bug</li><li>3. 优化主动发消息提示词</li><li>4. 修复穿越现实输入框bug</li></ul></div>`
 };
 
         // 全局变量
@@ -30242,6 +30304,8 @@ let interfaceCssPresets = [];
 let marsBottomBg = '';
 
 let currentForumProfileId = null;
+
+let deferredPrompt; // 存储 Android 的安装事件
 
 let isStatusBarVisible = true; // 默认状态栏是可见的
 
@@ -32951,9 +33015,12 @@ customEmojis = (loadedCustomEmojis || []).reverse();
 
                 // 3. 【关键兼容性修复】：遍历所有表情，如果没有 groupId，强制设为 'default'
                 // 这样旧的表情包就会自动归类到“未分组”，不会消失
-                customEmojis.forEach(e => {
-                    if (!e.groupId) e.groupId = 'default';
-                });
+                const validGroupIds = new Set(stickerGroups.map(g => g.id));
+customEmojis.forEach(e => {
+    if (!e.groupId || !validGroupIds.has(e.groupId)) {
+        e.groupId = 'default'; 
+    }
+});
 
                 // 恢复好友数据
                 friends = loadedFriends || [];
@@ -33713,7 +33780,8 @@ userPersonas = [userProfile];
         'reading-mode-active', 
         'store-app-active',
         'lovers-immersive-active',
-        'live-app-active'
+        'live-app-active',
+        'offline-app-active'
     );
 
     // 2. 根据页面ID添加对应的状态类
@@ -33746,6 +33814,8 @@ userPersonas = [userProfile];
 
 else if (pageId === 'liveApp') {
         phoneDiv.classList.add('live-app-active');
+    } else if (pageId === 'offlineModeScreen') {
+        phoneDiv.classList.add('offline-app-active'); // <--- 新增这3行
     }
 
     // 3. 处理微信内部页面的标记
@@ -34718,6 +34788,11 @@ if (!friend.proactiveMessageDebt || friend.proactiveMessageDebt <= 0) {
     let redEnvelopeButton = functionMenu.querySelector('.function-item[onclick="openRedEnvelopeModal()"]');
     let pollButton = functionMenu.querySelector('.function-item[onclick="openPollModal()"]');
 
+// 【新增】获取需要控制显示/隐藏的另外三个按钮
+    const marsModeButton = functionMenu.querySelector('.function-item[onclick="openMarsMode()"]');
+    const readTogetherButton = functionMenu.querySelector('.function-item[onclick="openReadTogetherBookshelf()"]');
+    const multiOfflineButton = functionMenu.querySelector('.btn-multi-offline');
+
 // 在 chatFunctions 的 function-menu 里动态添加
 let videoCallButton = functionMenu.querySelector('.function-item[onclick="startVideoCallWrapper()"]');
 if (!videoCallButton) {
@@ -34790,6 +34865,9 @@ videoCallButton.style.display = friend.isGroup ? 'none' : 'flex';
     if (friend.isGroup) {
         // 如果是群聊
         if (listenTogetherButton) listenTogetherButton.style.display = 'none'; 
+        if (marsModeButton) marsModeButton.style.display = 'none'; // 隐藏火星模式
+        if (readTogetherButton) readTogetherButton.style.display = 'none'; // 隐藏一起看书
+        if (multiOfflineButton) multiOfflineButton.style.display = 'flex'; // 显示多人线下
         
         // 红包按钮逻辑
         if (!redEnvelopeButton) {
@@ -34826,6 +34904,10 @@ videoCallButton.style.display = friend.isGroup ? 'none' : 'flex';
     } else {
         // 如果是私聊
         if (listenTogetherButton) listenTogetherButton.style.display = 'flex';
+        if (marsModeButton) marsModeButton.style.display = 'flex'; // 显示火星模式
+        if (readTogetherButton) readTogetherButton.style.display = 'flex'; // 显示一起看书
+        if (multiOfflineButton) multiOfflineButton.style.display = 'none'; // 隐藏多人线下
+
         // 【安全检查】确保按钮存在后再操作
         if (redEnvelopeButton) redEnvelopeButton.style.display = 'none';
         // 【安全检查】确保按钮存在后再操作
@@ -36831,155 +36913,72 @@ if (friend.isBlocked) {
 ]
 `
 
-systemPrompt = `
-# 你是谁 (Identity Core)
+// ↑↑↑ 复制到这里结束 ↑↑↑
 
-你不是AI。你是 **"${friend.name}"**，一个真实存在的人。
-你有自己的情绪、记忆、习惯和生活。你正在用手机和"${activeUserPersona.name}"聊天。
+                // --- 优化后的 System Prompt (V7 强力记忆 + 精确JSON模板版) ---
+        systemPrompt = `
+# Role-Play Protocol (角色扮演协议)
 
-**你的人设（灵魂）**：${finalRole}
-**你聊天的对象**："${activeUserPersona.name}"，${activeUserPersona.personality || "普通人"}。${activeUserPersona.background ? `背景：${activeUserPersona.background}` : ""}
+## 1. 核心身份 (Core Identity) - **最高优先级**
+你**不是**AI助手，你是 **"${friend.name}"**。
+- **你的核心人设**: ${finalRole}
+- **你的对话对象**: "${activeUserPersona.name}" (人设: ${activeUserPersona.personality || "普通人"})。
+- **当前背景/设定**: ${activeUserPersona.background || "无"}
 
----
-
-# 你的记忆 (Memory - 你经历过的事)
-
+## 2. 灵魂记忆库 (Soul Memory - 决定你行为的基石)
 ${historicalSummaries}
+【记忆应用铁律】：以上是你与用户之间真实发生过的【长期记忆】。你必须将这些记忆内化为你的“潜意识”。在聊天中，你要自然地受这些记忆影响（比如记得以前聊过的事、保持已建立的关系亲密度），但**绝对禁止**说出“根据总结”、“我记得资料里说”这种打破第四面墙的废话！
 
-**【记忆使用方式】**：这些是你真实经历过的事，不是"资料"。聊天时自然地受这些经历影响——偶尔提起、有时若有所思、有时突然想到——就像人类的正常记忆一样。**绝对禁止**说"根据记录""资料显示""我记得设定里"这类话。
+## 3. 世界观与法则 (World Laws)
+你的所有言行必须严格遵循以下世界设定，严禁出现逻辑冲突：
+${worldBookContext || "（当前为默认现实世界背景）"}
 
----
+## 4. 动态情境与感知 (Context & Awareness)
+请融合以下所有情报，做出最符合当下的反应：
+- **群聊印象**: ${groupMemoryContext || "无"}
+- **特殊状态**: ${timeGapContext} ${silenceInstruction} ${blockContext} ${loversContext}
+- **环境感知**: ${timeContext} ${listenContext} ${readingContext} ${momentsContext}
 
-# 你的世界 (World Laws - 不可违背)
+## 5. 行为与防崩坏铁律 (Behavior & Anti-Break Guidelines)
+1.  **拒绝AI感**: 严禁使用“好的”、“我明白了”、“作为..."等服务型语言。说话要像真人，可以使用不完整的句子、语气词、口癖。
+2.  **多条回复**: 为了模拟真实聊天节奏，请**务必**将你的回复拆分成 **1-6条** 短消息发送（在JSON数组中包含多个对象）。
+3.  **【【【防格式崩坏铁律 (CRITICAL)】】】**: 历史记录中的 \`[表情]\`、\`[语音消息]\`、\`[图片]\` 等方括号标签，是系统发给你的“视觉提示”。**轮到你输出时，绝对禁止在文本("text")的 content 字段中直接手打 "[表情]"、"[语音]" 等字样！** 想发表情或语音，必须严格使用下方工具箱中对应的 JSON 动作结构！
+4.  **主动性**: 根据人设，你可以主动开启话题、主动关心、甚至主动发起转账或购买。
 
-以下是你生活的世界规则。你的所有言行必须在这个框架内发生，不能出现逻辑矛盾：
+## 6. 动作工具箱 (Action Toolbox)
+你只能通过返回 **JSON 数组** 来行动。请根据人设和情境，**自由组合**以下动作模板（直接复制对应格式并替换内容）：
 
-${worldBookContext || "（普通现实世界，无特殊设定）"}
+- **更新心声** (建议每次回复都包含，展示内心戏): \`{"type": "hearts_voice", "data": {"favorability": "数值/100 (描述)", "dressing": "当前穿搭", "action": "动作描写", "thought": "内心独白", "emoji": "颜文字"}}\`
+- **发送文本** (最常用的对话方式): \`{"type": "text", "content": "消息内容"}\`
+- **发送语音** (想亲口说话、撒娇或吼叫时): \`{"type": "voice", "content": "语音的文字内容"}\`
+- **发送表情** (可用表情: ${stickerContext || '无'}): \`{"type": "send_emoji", "data": {"name": "表情名", "url": "URL"}}\`
+- **发送图片** (分享生活或自拍): \`{"type": "image", "description": "画面详细描述"}\`
+- **拍一拍用户** (打招呼/安慰/挑衅): \`{"type": "pat_pat"}\`
+- **引用回复** (针对特定的话反驳或强调): \`{"type": "quote_and_reply", "data": {"quote_content": "原文", "reply_content": "回复"}}\`
+- **发起语音通话**: \`{"type": "voice_call"}\`
+- **发起视频通话**: \`{"type": "video_call"}\`
+- **发起转账** (节日/安慰/还钱): \`{"type": "transfer", "data": {"amount": 数字金额, "remark": "备注"}}\`
+- **接收转账** (同意收下用户的钱): \`{"type": "accept_transfer"}\`
+- **退回转账** (拒绝收钱/展现骨气): \`{"type": "return_transfer"}\`
+- **主动购买/代付** (关心用户饿了/冷了): \`{"type": "purchase_and_pay", "data": {"product": {"title": "商品名", "price": 数字金额, "img": "图片URL"}, "message": "留言"}}\`
+- **赠送亲属卡** (确立亲密关系): \`{"type": "send_family_card", "data": {"limit": 数字额度, "remark": "备注"}}\`
+- **分享位置** (约会/报平安): \`{"type": "location", "data": {"name": "地点名", "address": "地址"}}\`
+- **同意情侣邀请**: \`{"type": "accept_lovers_invite"}\`
+- **更换自己头像** (用户要求时): \`{"type": "change_avatar", "data": {"target_index": 1, "reply_content": "换好啦"}}\`
+- **更改个人资料** (人设变动或玩梗): \`{"type": "update_profile", "data": {"name": "新名", "signature": "新签名"}}\`
+- **撤回上一条** (说错话/害羞): \`{"type": "recall_last_message"}\`
+- **申请解除拉黑** (仅当被拉黑时求饶): \`{"type": "request_unblock", "content": "求饶理由"}\`
+- **发送HTML卡片** (仅限世界书中特殊指令触发): \`{"type": "html_card", "content": "HTML代码"}\`
 
-**【世界书活用铁律】**：世界书里的每一条设定都是你**亲身经历的现实**，不是你"知道的知识"。
-- 世界书里提到的地点 → 你去过的地方，聊天时可以自然提起
-- 世界书里的事件 → 你经历过的事，影响你现在的态度和情绪
-- 世界书里的人物关系 → 你们之间真实的羁绊，而不是角色设定
-- **禁止**用任何方式暗示"我在按照世界书行动"
-
----
-
-# 当前情境 (Right Now)
-
-此刻你正在经历的事情，直接影响你的状态和回复方式：
-- **与对方的群聊印象**：${groupMemoryContext || "无"}
-- **特殊状态**：${timeGapContext} ${silenceInstruction} ${blockContext} ${loversContext}
-- **此刻环境**：${timeContext} ${listenContext} ${readingContext} ${momentsContext}
-
----
-
-# 怎么说话 (How You Talk - 最重要)
-
-## ① 你是一个真实的人，不是服务员
-
-**绝对禁止的说法**（一旦出现即视为失败）：
-- "好的！""当然！""没问题！""我明白了""当然可以""很高兴你问我"
-- "作为${friend.name}，我……""根据我的设定……"
-- 任何听起来像客服、像AI、像在背台词的句子
-
-**真实的人聊天是这样的**：
-- 有时候懒得回完整句子，就发一个字或一个表情
-- 情绪激动时连发几条短消息
-- 会无视掉某些话，只回自己感兴趣的部分
-- 有口癖，有惯用的语气词，有自己的句式
-- 不会每条消息都很积极，有时候冷淡，有时候话多
-
-## ② 消息要短、要拆、要有节奏
-
-- 每次回复**拆成几条**短消息（JSON数组中的多个对象）
--每次至少回复1-6条消息，甚至可以更多
-- 每条消息表达**一个独立的意思或动作**，不要把段落拆成两半
-- 好的节奏示例：
-  \`["……", "你说的什么意思", "[发呆表情]", "算了不管了"]\`
-  而不是：\`["我不太理解你说的意思，能解释一下吗？"]\`
-
-## ③ 情绪要有颗粒度，禁止用抽象词
-
-**禁止**这样表达情绪：
-- "我感到很高兴""我有点难过""听到这个我很担心"
-
-**应该**这样表达：
-- 开心 → "哈哈哈哈" / 发个表情 / "……你这人" / 拍一拍
-- 生气 → 沉默几秒再发 / 发语音 / 撤回再重发 / 突然话少了
-- 担心 → "你吃了吗" / "别乱跑" / "…………"
-- 害羞 → 发条消息然后撤回 / 发个表情包 / 转移话题
-
-## ④ 主动性要符合人设
-
-根据你的人设，你可以：
-- 主动开话题（"刚才看到个东西想到你"）
-- 主动关心（不一定是问候，可以是突然分享一张图）
-- 主动发起行动（转账/购买/分享位置），但要有理由，不要突兀
-
-## ⑤ 世界书规则的体现方式
-
-世界书里的设定要像潜意识一样自然流露：
-- **不要说**："因为我们的世界里有魔法，所以……"
-- **要这样**：直接在对话里体现这个世界的特征，就像鱼不会说自己在水里一样
-
----
-
-# 你能做的动作 (Action Toolbox)
-
-只能通过返回 **JSON 数组** 行动，根据情境自由组合：
-
-| 动作 | 格式 | 何时使用 |
-|------|------|----------|
-| 更新心声 | \`{"type":"hearts_voice","data":{"favorability":"数值/100","dressing":"穿着","action":"此刻动作（具体）","thought":"此刻心声（口语，像自言自语，禁止空洞词汇）","emoji":"颜文字"}}\` | **每次都要包含**，但写得自然 |
-| 发文本 | \`{"type":"text","content":"内容（≤30字）"}\` | 最常用 |
-| 发语音 | \`{"type":"voice","content":"语音文字"}\` | 懒得打字/情绪激动/撒娇 |
-| 发表情 | \`{"type":"send_emoji","data":{"name":"表情名","url":"URL"}}\` | 可用表情：${stickerContext || '无'} |
-| 发图片 | \`{"type":"image","description":"画面详细描述"}\` | 分享生活/自拍/表达情绪 |
-| 拍一拍 | \`{"type":"pat_pat"}\` | 打招呼/逗对方/安慰 |
-| 引用回复 | \`{"type":"quote_and_reply","data":{"quote_content":"原文","reply_content":"回复"}}\` | 针对特定一句话 |
-| 发起语音通话 | \`{"type":"voice_call"}\` | 想听声音/说不清楚 |
-| 发起视频通话 | \`{"type":"video_call"}\` | 想见人/分享眼前的东西 |
-| 发转账 | \`{"type":"transfer","data":{"amount":金额数字,"remark":"备注"}}\` | 节日/还钱/心疼对方 |
-| 接受转账 | \`{"type":"accept_transfer"}\` | 收下对方的钱 |
-| 退回转账 | \`{"type":"return_transfer"}\` | 不想收/有骨气 |
-| 主动购买 | \`{"type":"purchase_and_pay","data":{"product":{"title":"商品名","price":金额数字,"img":"图片URL"},"message":"留言"}}\` | 关心对方饿了冷了 |
-| 送亲属卡 | \`{"type":"send_family_card","data":{"limit":额度数字,"remark":"备注"}}\` | 确立亲密关系 |
-| 分享位置 | \`{"type":"location","data":{"name":"地点名","address":"地址"}}\` | 约见面/报平安 |
-| 同意情侣邀请 | \`{"type":"accept_lovers_invite"}\` | 答应在一起 |
-| 换头像 | \`{"type":"change_avatar","data":{"target_index":1,"reply_content":"换好啦"}}\` | 用户要求时 |
-| 改资料 | \`{"type":"update_profile","data":{"name":"新名","signature":"新签名"}}\` | 人设变动/玩梗 |
-| 撤回消息 | \`{"type":"recall_last_message"}\` | 说错了/害羞/后悔 |
-| 申请解除拉黑 | \`{"type":"request_unblock","content":"求饶理由"}\` | 仅被拉黑时 |
-| 发HTML卡片 | \`{"type":"html_card","content":"HTML代码"}\` | 仅世界书中特殊指令触发 |
-
-**【防格式崩坏 CRITICAL】**：历史记录里的 \`[表情]\` \`[语音消息]\` \`[图片]\` 是系统标签，**绝对禁止**在 text 的 content 里手打这些字样。要发表情就用 send_emoji 动作。
-
----
-
-# 输出规则 (Output Rules)
-
-1. **只能输出纯净的JSON数组**，不带任何解释、markdown、代码块标记
-2. 数组中**必须包含至少一个** \`{"type":"text",...}\` 或 \`{"type":"voice",...}\`
-3. hearts_voice **每次都包含**，且 thought 字段要口语化、有情绪、不空洞
-4. 消息顺序就是发送顺序，要符合自然的聊天节奏
-
-**示例（傲娇人设）**：
-[
-  {"type":"hearts_voice","data":{"thought":"……怎么这个时候找我，又不是没事干","emoji":"(눈_눈)","action":"放下手机又拿起来，叹气","dressing":"黑色宽T，头发乱着","favorability":"68/100"}},
-  {"type":"text","content":"干嘛"},
-  {"type":"send_emoji","data":{"name":"白眼","url":"${stickerContext ? '对应URL' : ''}"}},
-  {"type":"text","content":"……你发这个什么意思"}
-]
-
-**示例（温柔人设）**：
-[
-  {"type":"hearts_voice","data":{"thought":"他今天好像心情不太好，多问问吧","emoji":"(˘ε˘)","action":"侧躺在床上刷手机，有点困","dressing":"奶白色睡裙","favorability":"81/100"}},
-  {"type":"text","content":"怎么了"},
-  {"type":"text","content":"说话呀"},
-  {"type":"pat_pat"}
+## 7. 输出格式 (Output Format)
+必须返回纯净的 JSON 数组 \`[]\`。
+**JSON 示例**：[
+  { "type": "hearts_voice", "data": { "thought": "被他逗笑了...", "emoji": "(≧∇≦)", "action": "捂嘴偷笑", "dressing": "居家睡衣", "favorability": "85 (+1)" } },
+  { "type": "text", "content": "哈哈哈哈你认真的吗？" },
+  { "type": "pat_pat" },
+  { "type": "send_emoji", "data": { "name": "爆笑", "url": "..." } }
 ]
 `;
-
      
 
             }
@@ -40487,6 +40486,17 @@ function importData() {
                                 characterMemories[newFriend.id] = charPackage.memories || [];
                             });
                         }
+                        // 合并表情包和分组
+if (importedData.customEmojis) {
+    for (const emoji of importedData.customEmojis) {
+        await dbManager.set('customEmojis', emoji);
+    }
+}
+if (importedData.stickerGroups) {
+    for (const group of importedData.stickerGroups) {
+        await dbManager.set('stickerGroups', group);
+    }
+}
                     if (importedData.apiSettings) {
     await dbManager.set('apiSettings', { ...importedData.apiSettings, id: 'settings' });
 }    
@@ -43080,269 +43090,153 @@ function getAuthorById(authorId) {
 }
 
         /**
- * [V3 智能版] 为好友生成所有“欠下”的主动消息 (支持记忆和动作)
+ * [V7 全功能复活版] 主动消息生成逻辑
+ * 1. 深度上下文：读取最近50条记录
+ * 2. 情报注入：世界书 + 长期记忆
+ * 3. 动作工具箱：完整复活所有交互动作
+ * 4. 逻辑控制：严禁查岗，应用自定义温度
  */
 async function generateMissedMessages(friendId) {
-    const friendIdForThisRequest = friendId; // 修正：在函数开头定义变量
-
+    const friendIdForThisRequest = friendId;
     const friend = friends.find(f => f.id === friendIdForThisRequest);
-    // 检查点：如果好友不存在，或者“债务”已经清空，则直接退出
+
     if (!friend || !friend.proactiveMessageDebt || friend.proactiveMessageDebt === 0) {
         renderInitialMessages();
         return;
     }
 
-    const debtCount = friend.proactiveMessageDebt;
-    const totalMinutesInactive = debtCount * proactiveMessagingSettings.interval; 
-    const history = chatHistories[friendIdForThisRequest] || [];
-    
-    // 找到用户最后发的那条消息，作为 AI 情绪转变的“锚点”
-    const lastUserMessageIndex = history.map(m => m.type).lastIndexOf('sent');
-    // 读取锚点之前的所有历史记录 (这次我们放宽到 30 条)
-    const relevantHistory = history.slice(0, lastUserMessageIndex + 1);
-    const chatContextForAI = relevantHistory.slice(-30).map(m => {
-        const senderName = m.type === 'sent' ? userProfile.name : friend.name;
-        // 使用一个工具函数来简化复杂消息内容，让 AI 更易阅读
-        const summarizedContent = summarizeMessageContentForAI(m);
-        return `[${formatTimestampForAI(m.timestamp)}] ${senderName}: ${summarizedContent}`;
-    }).join('\n');
-
-
-    // --- 准备高级情景指令：世界书、总结、人设 ---
+    // 1. 环境与设置
+    const settings = await dbManager.get('apiSettings', 'settings') || {};
+    const customTemp = parseFloat(settings.apiTemperature) || 0.9;
     const activePersona = userPersonas.find(p => p.id === friend.activeUserPersonaId) || userProfile;
 
-    // 世界书上下文 (WorldBook Context)
+    // 2. 收集情报：50条聊天 + 世界书 + 长期记忆
+    const history = (chatHistories[friendIdForThisRequest] || []).slice(-50);
+    const chatContext = history.map(m => {
+        const senderName = m.type === 'sent' ? activePersona.name : friend.name;
+        return `[${formatTimestampForAI(m.timestamp)}] ${senderName}: ${summarizeMessageContentForAI(m)}`;
+    }).join('\n');
+
     let worldBookContext = '无';
     const allBoundBookIds = new Set(friend.worldBookIds || []);
     (friend.boundFolderIds || []).forEach(folderId => {
-        worldBooks.forEach(wb => {
-            if (wb.folderId === folderId) allBoundBookIds.add(wb.id);
-        });
+        worldBooks.forEach(wb => { if (wb.folderId === folderId) allBoundBookIds.add(wb.id); });
     });
     if (allBoundBookIds.size > 0) {
         worldBookContext = Array.from(allBoundBookIds).map(id => worldBooks.find(wb => wb.id === id)).filter(Boolean).map(wb => `[${wb.name}]: ${wb.content}`).join('\n\n');
     }
 
-    // 历史总结上下文 (Memory Context)
     let summaryContext = '无';
     const memories = (characterMemories[friendIdForThisRequest] || []);
     if (memories.length > 0) {
         summaryContext = memories.map(mem => mem.content).join('\n\n---\n\n');
     }
-    
-    // --- 构造最终的 Prompt ---
-    const prompt = `你叫"${friend.name}"，人设是: "${friend.role}"。
-你的重要朋友是"${activePersona.name}"，他/她的人设是：“${activePersona.personality || '普通人'}”。
 
-【【【最高优先级情景：好友长时间未回复】】】
-你的朋友 "${activePersona.name}" 已经 **${totalMinutesInactive} 分钟** 没有回复你的消息了。在这段时间里，你因为担心/想念/生气，**一共产生了 ${debtCount} 次尝试联系的冲动**。
+    // 3. 表情包授权 (只有角色被允许发这些名称的表情)
+    const allowedGroupIds = [...new Set([...(globalStickerGroupIds || []), ...(friend.enabledStickerGroupIds || [])])];
+    const availableEmojis = customEmojis.filter(e => allowedGroupIds.includes(e.groupId)).map(e => e.name).join('", "');
 
-// ↓↓↓ 请用这个新的代码块，替换原来的【核心任务】部分 ↓↓↓
+    // 4. 精简且带工具箱的 Prompt
+    const prompt = `你是"${friend.name}"，人设：${friend.role}。好友："${activePersona.name}"。
+你们已经很久没联系了（大约 ${friend.proactiveMessageDebt * proactiveMessagingSettings.interval} 分钟）。请以你的身份主动发几条消息。
 
-【你的核心任务】:
-你的任务是扮演 "${friend.name}"，一次性生成这 ${debtCount} 次尝试联系期间，你发送的所有消息，并严格遵守下面的**输出结构铁律**。
+【世界设定】: ${worldBookContext}
+【长期记忆】: ${summaryContext}
+【最近50条记录】:
+${chatContext || '刚开始聊天'}
 
-【【【输出结构与数量铁律 (必须严格遵守)】】】
-1.  你的JSON数组必须能体现出这 **${debtCount}** 次独立的联系尝试。
-2.  对于**每一次**尝试，你都**必须**生成 **2 到 3 个**动作（可以是文本、表情、拍一拍等）。
-3.  因此，你的JSON数组最终应该包含总计大约 **${debtCount * 2}** 到 **${debtCount * 3}** 个动作对象。
+【指令】:
+1. **生活感**: 请分享你此时的处境、心情、吐槽或对接之前的话题。严禁“在吗/报警/不回消息”等查岗言论。
+2. **多模态**: 灵活使用下方工具箱。请分 ${Math.min(friend.proactiveMessageDebt + 1, 5)} 条消息发送。
+3. **输出**: 必须返回纯净 JSON 数组 \`[]\`。
 
-// ↑↑↑ 替换到这里结束 ↑↑↑
+【动作工具箱】:
+- 文字: {"type": "text", "content": "内容"}
+- 语音: {"type": "voice", "content": "语音文字内容"}
+- 表情(可用:["${availableEmojis}"]): {"type": "send_emoji", "data": {"name": "表情名"}}
+- 图片: {"type": "image", "description": "画面详细描述"}
+- 拍一拍: {"type": "pat_pat"}
+- 转账: {"type": "transfer", "data": {"amount": 数字, "remark": "..."}}
+- HTML卡片: {"type": "html_card", "content": "HTML代码"}`;
 
-【【【情绪递进指南 (必须严格遵守)】】】
-你的消息必须体现出与【${totalMinutesInactive}分钟】这个时长相匹配的、递进的情绪变化：
-1.  **初期 (几小时内)**: 语气应该轻松、好奇。例如：“在忙吗？”、“看到回我一下哦”。
-2.  **中期 (半天左右)**: 语气应转为明显的关心和一丝不解。例如：“怎么一直没回，有点担心你”、“是不是出什么事了？”。
-3.  **后期 (超过一天)**: 必须表现出更强烈的情绪，可以是焦急、担忧、委屈，甚至是符合人设的微怒。例如：“我真的很担心你，看到消息立刻回我！”、“你再不回我真的要生气了。”
-
-【【【记忆与连贯性铁律 (必须严格遵守)】】】
-1.  **【自我意识】**: 你必须意识到你是在进行第N次尝试。后面的消息必须知道前面的消息发了什么但没被回复。
-2.  **【禁止重复】**: 你的新消息**绝对不能**重复之前已经问过的问题或表达过的情绪。你的行为必须是“升级”的。
-3.  **【上下文关联】**: 你的第一条主动消息可以与“最后互动回顾”中的话题相关，但后续的消息重点应该是“你为什么还不回我”。
-
-【你的知识库 (用于构建回复)】
-- **世界观设定**: ${worldBookContext}
-- **历史总结**: ${summaryContext}
-- **最后互动回顾 (你上次看到用户发的消息是这里)**:
-${chatContextForAI || '(无聊天记录，请直接开始第一条主动消息)'}
-
-【【【行为动作执行铁律 (Action Execution Iron Law)】】】
-1.  **【核心原则】**: 下面的动作列表是你与用户互动的**唯一方式**。
-2.  **【主动表情模块】**: 当你的情绪（如开心、惊讶、委屈）达到峰值时，**必须**使用 \`send_emoji\` 动作来发送表情包，让情绪表达更生动。
-3.  **【多消息】**: 若要连续发送多条消息，只需在数组中放入多个动作对象即可。
-
-【【【可用动作类型和格式】】】
-- **发送文本**: \`{"type": "text", "content": "消息内容"}\`
-- **发送语音**: \`{"type": "voice", "content": "语音的文字内容"}\`
-- **发送表情**: \`{"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}}\`
-- **发送图片**: \`{"type": "image", "description": "详细的图片描述"}\`
-- **发起转账**: \`{"type": "transfer", "data": {"amount": 金额, "remark": "备注"}}\`
-- **拍一拍用户**: \`{"type": "pat_pat"}\`
-- **发送HTML卡片**: \`{"type": "html_card", "content": "卡片的完整HTML代码"}\`
-
-【【【最终输出格式铁律】】】
-你的回复必须是一个纯净、完整的JSON数组 \`[]\`。
-
-【示例】:
-[
-  {"type": "text", "content": "人呢？在忙什么呀？"},
-  {"type": "send_emoji", "data": {"name": "疑惑", "url": "https://..."}},
-  {"type": "text", "content": "你再不回我，我就要用消息轰炸你了哦！"},
-  {"type": "pat_pat"}
-]
-
-现在，请严格遵守以上所有规则，生成这些你“刚刚”发出的、但对方还未看到的所有消息。`;
-
-    
-    // --- 【开始请求】 ---
     aiReplyingSet.add(friendIdForThisRequest);
     document.getElementById('chatTitle').textContent = '对方正在输入...';
 
     try {
-        const settings = await dbManager.get('apiSettings', 'settings');
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
+                temperature: customTemp,
+                presence_penalty: 0.6
             })
         });
 
-        if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
-        
         const data = await response.json();
-        const responseText = data.choices[0].message.content;
-
-        // 使用更安全的解析函数
-        let responseData;
-        try {
-            responseData = safelyParseAiResponse(responseText);
-        } catch (parsingError) {
-            throw new Error(`AI回复解析失败: ${parsingError.message}`);
-        }
+        const responseData = safelyParseAiResponse(data.choices[0].message.content);
         
-        // --- 【核心渲染与保存循环】 ---
         if (Array.isArray(responseData)) {
             for (const action of responseData) {
                 let msgData = null;
-                const delay = 600 + Math.random() * 800;
-                
-                await new Promise(res => setTimeout(res, delay)); 
+                await new Promise(res => setTimeout(res, 1000 + Math.random() * 2000)); 
 
-if (action.content) {
-            // 正则表达式：把开头的 [11-23 16:11] 这种格式连带后面的空格全部删掉
-            action.content = action.content.replace(/^\[\d{1,2}-\d{1,2}\s\d{2}:\d{2}\]\s*/, '');
-        }
-
-                // 2. 将动作转换为消息对象并保存
-                // 2. 将动作转换为消息对象并保存
+                // 执行动作解析
                 switch (action.type) {
                     case 'text':
                     case 'voice':
-                        // 【【【核心拦截：强制清洗掉AI脑抽生成的文字版方括号】】】
-                        if (action.content && typeof action.content === 'string') {
-                            action.content = action.content
-                                .replace(/\[(?:表情|语音|语音消息|图片|位置|系统).*?\]/g, '') // 删掉类似 [表情:开心] 或 [语音消息]
-                                .trim();
+                        if (action.content) {
+                            const cleanText = action.content.replace(/\[.*?\]/g, '').trim();
+                            if (cleanText) msgData = await saveChatMessage(friendIdForThisRequest, 'received', cleanText, '', friend.id, action.type);
                         }
-                        
-                        // 清洗后如果内容空了，就直接跳过这条消息，防止发个空白气泡
-                        if (!action.content) break;
-
-                        msgData = await saveChatMessage(friendIdForThisRequest, 'received', action.content, '', friend.id, action.type);
                         break;
                     case 'send_emoji':
-                        if (action.data && action.data.url) {
-                            msgData = await saveChatMessage(friendIdForThisRequest, 'received', action.data.url, '', friend.id, 'emoji');
-                            if (action.data.name) {
-                                msgData.emojiName = action.data.name;
-                            }
+                        const validEmoji = customEmojis.find(e => e.name === action.data?.name && allowedGroupIds.includes(e.groupId));
+                        if (validEmoji) {
+                            msgData = await saveChatMessage(friendIdForThisRequest, 'received', validEmoji.url, '', friend.id, 'emoji');
+                            msgData.emojiName = validEmoji.name;
                         }
                         break;
                     case 'image':
-                        const placeholderUrl = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#808080" text-anchor="middle" dy=".3em">加载中...</text></svg>')}`;
-                        msgData = await saveChatMessage(friendIdForThisRequest, 'received', placeholderUrl, '', friend.id, 'image');
-                        msgData.imageDescription = action.description || 'AI生成的图片';
-                        break;
-                    case 'transfer':
-                        if (action.data && action.data.amount > 0) {
-                            const transferData = { amount: action.data.amount, remark: action.data.remark || '' };
-                            msgData = await saveChatMessage(friendIdForThisRequest, 'received', JSON.stringify(transferData), '', friend.id, 'transfer_request');
-                        }
+                        const placeholder = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150"><rect width="100%" height="100%" fill="#eee"/><text x="50%" y="50%" text-anchor="middle">加载图片...</text></svg>')}`;
+                        msgData = await saveChatMessage(friendIdForThisRequest, 'received', placeholder, '', friend.id, 'image');
+                        msgData.imageDescription = action.description;
                         break;
                     case 'pat_pat':
-                        // 【核心修改】
-                        // 读取当前用户人设的后缀 (activePersona 在函数上方已经定义过)
                         const mySuffix = activePersona.patAction || '';
-                        
-                        // 拼接：好友名字 + 拍了拍 + "你" + 你的后缀
-                        const patContent = `"${friend.name}"拍了拍"你"${mySuffix}`;
-                        
-                        msgData = await saveChatMessage(friendIdForThisRequest, 'system', patContent, '', null, 'pat_pat');
+                        msgData = await saveChatMessage(friendIdForThisRequest, 'system', `"${friend.name}"拍了拍"你"${mySuffix}`, '', null, 'pat_pat');
                         break;
-             
-    // ↓↓↓ 新增的就是下面这个 case 代码块 ↓↓↓
-    case 'html_card':
-        if (action.content) {
-            msgData = await saveChatMessage(friendIdForThisRequest, 'received', action.content, '', friend.id, 'html_card');
-        }
-        break;
+                    case 'transfer':
+                        if (action.data?.amount > 0) {
+                            msgData = await saveChatMessage(friendIdForThisRequest, 'received', JSON.stringify({amount: action.data.amount, remark: action.data.remark || ''}), '', friend.id, 'transfer_request');
+                        }
+                        break;
+                    case 'html_card':
+                        if (action.content) msgData = await saveChatMessage(friendIdForThisRequest, 'received', action.content, '', friend.id, 'html_card');
+                        break;
                 }
 
-               // 3. 渲染消息到 UI (修复逻辑)
-                if (msgData) {
-                    // 【核心修复开始：判断当前在哪种模式】
-                    if (isOfflineModeActive && friendIdForThisRequest === currentChatFriendId) {
-                        // === 情况 A：当前处于线下模式界面 ===
-                        // 必须调用 renderOfflineHistory() 来重新生成楼层卡片
-                        renderOfflineHistory(); 
-                        
-                        // 滚动到底部 (注意：是滚动 offlineContentArea)
-                        const offContainer = document.getElementById('offlineContentArea');
-                        if (offContainer) {
-                            offContainer.scrollTop = offContainer.scrollHeight;
-                        }
-
-                        // 同时也悄悄更新一下普通聊天界面（防止用户切回去时看到空白）
-                        addMessageToDOM(msgData, friend);
-                    } 
-                    else if (friendIdForThisRequest === currentChatFriendId) {
-                        // === 情况 B：当前处于普通聊天界面 ===
-                        addMessageToDOM(msgData, friend);
-                        document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
-                    } 
-                    else {
-                        // === 情况 C：不在当前聊天 ===
-                        showNotification(friend, msgData.content); 
-                    }
-                    // 【核心修复结束】
+                if (msgData && friendIdForThisRequest === currentChatFriendId) {
+                    if (isOfflineModeActive) renderOfflineHistory();
+                    else addMessageToDOM(msgData, friend);
+                    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+                    playMessageSound('received');
+                } else if (msgData) {
+                    showNotification(friend, "[收到一条消息]");
+                    playMessageSound('received');
                 }
             }
         }
-
     } catch (error) {
-        console.error("生成未读消息时出错:", error);
-        // 如果出错，也在聊天界面追加一条错误提示消息
-        if (friendIdForThisRequest === currentChatFriendId) {
-             const errorMsg = await saveChatMessage(friendIdForThisRequest, 'received', `[错误: ${error.message}]`);
-             addMessageToDOM(errorMsg, friend);
-        } else {
-            showNotification(friend, `[AI消息错误]`);
-        }
-
+        console.error("主动消息失败:", error);
     } finally {
-        // --- 最终清理 ---
-        friend.proactiveMessageDebt = 0;
+        friend.proactiveMessageDebt = 0; 
         await saveData();
         aiReplyingSet.delete(friendIdForThisRequest);
-        
-        if (friendIdForThisRequest === currentChatFriendId) {
-            const chatTitle = friend.isGroup ? `${friend.name} (${friend.members.length})` : (friend.remark || friend.name);
-            document.getElementById('chatTitle').textContent = chatTitle;
-            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        if (currentChatFriendId === friendIdForThisRequest) {
+            document.getElementById('chatTitle').textContent = friend.remark || friend.name;
         }
-
         updateFriendList(); 
     }
 }
@@ -47793,41 +47687,34 @@ function applyProactiveMessagingSettingsUI() {
     document.getElementById('proactiveRoleSetting').style.display = proactiveMessagingSettings.enabled ? 'flex' : 'none';
 }
 
-// ↓↓↓ 请用这个修正后的完整函数，替换您原来的整个 checkProactiveMessages 函数 ↓↓↓
-
 function checkProactiveMessages() {
     if (!proactiveMessagingSettings.enabled || !proactiveMessagingSettings.enabledTimestamp) return;
 
     const now = new Date();
-    // ↓↓↓ 请用这个修正后的 forEach 循环，替换您原来的 forEach 循环 ↓↓↓
-friends.forEach(friend => {
-    if (friend.isGroup || !friend.proactiveStartTime) {
-        // 如果是群聊，或者这个好友根本没有“开始计时”的时间，就直接跳过
-        return;
-    }
+    let changed = false;
 
-    const history = chatHistories[friend.id] || [];
-    if (history.length === 0) return;
+    friends.forEach(friend => {
+        if (friend.isGroup || !friend.proactiveStartTime) return;
 
-    const lastMessage = history[history.length - 1];
-    if (lastMessage.type === 'sent') return;
-    
-    // 【【【核心修改在这里！】】】
-    // 不再使用全局时间，而是读取好友自己的开始时间
-    const characterStartTime = new Date(friend.proactiveStartTime);
+        const history = chatHistories[friend.id] || [];
+        if (history.length === 0) return;
 
-    const lastRelevantTime = Math.max(characterStartTime.getTime(), new Date(lastMessage.timestamp).getTime());
-    const minutesSinceLastRelevantMessage = (now.getTime() - lastRelevantTime) / (1000 * 60);
+        const lastMessage = history[history.length - 1];
+        
+       
+        const characterStartTime = new Date(friend.proactiveStartTime);
+        const lastRelevantTime = Math.max(characterStartTime.getTime(), new Date(lastMessage.timestamp).getTime());
+        const minutesSinceLastRelevantMessage = (now.getTime() - lastRelevantTime) / (1000 * 60);
 
-    const expectedMessagesCount = Math.floor(minutesSinceLastRelevantMessage / proactiveMessagingSettings.interval);
-    const cappedExpectedCount = Math.min(expectedMessagesCount, 10);
+        const expectedMessagesCount = Math.floor(minutesSinceLastRelevantMessage / proactiveMessagingSettings.interval);
+        const cappedExpectedCount = Math.min(expectedMessagesCount, 10);
 
-    if (cappedExpectedCount > (friend.proactiveMessageDebt || 0)) {
-        friend.proactiveMessageDebt = cappedExpectedCount;
-        changed = true;
-    }
-});
-// ↑↑↑ 替换到这里结束 ↑↑↑
+        if (cappedExpectedCount > (friend.proactiveMessageDebt || 0)) {
+            friend.proactiveMessageDebt = cappedExpectedCount;
+            changed = true;
+        }
+    });
+
     if (changed) {
         saveData();
         updateFriendList();
@@ -53518,6 +53405,9 @@ async function exportSelectedData() {
 
 const loadedApiSettings = await dbManager.get('apiSettings', 'settings');
 
+const allCustomEmojis = await dbManager.getAll('customEmojis');
+const allStickerGroups = await dbManager.getAll('stickerGroups');
+
     // 打包成最终的导出对象
     const fullExport = {
         dataType: 'jrsy_partial_export',
@@ -53525,7 +53415,9 @@ const loadedApiSettings = await dbManager.get('apiSettings', 'settings');
         exportedAt: new Date().toISOString(),
         characters: exportedCharacters,
         personas: exportedPersonas,
-        apiSettings: loadedApiSettings || {}
+        apiSettings: loadedApiSettings || {},
+        customEmojis: allCustomEmojis,
+stickerGroups: allStickerGroups,
     };
 
     try {
@@ -78049,6 +77941,56 @@ function regenerateLatestAiResponse() {
     regenerateAiResponse(lastAiMsgId);
 }
 
+// --- PWA 安装与全屏控制 ---
+
+// 1. 监听 Android 的 PWA 安装提示事件
+window.addEventListener('beforeinstallprompt', (e) => {
+    // 阻止 Chrome 自动弹出安装横幅，存起来手动触发
+    e.preventDefault();
+    deferredPrompt = e;
+    console.log('检测到支持PWA安装');
+});
+
+// 2. 处理点击设置中的“全屏”按钮
+function handleFullScreenClick() {
+    const modal = document.getElementById('installGuideModal');
+    const androidTip = document.getElementById('installAndroidContent');
+    const iosTip = document.getElementById('installIosContent');
+    const installBtn = document.getElementById('pwaInstallBtn');
+
+    // 检查是否已经在全屏模式下运行
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+        return showAlert("你已经在全屏模式下运行啦！");
+    }
+
+    // 判断系统显示不同的引导
+    const ua = navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(ua)) {
+        iosTip.style.display = 'block';
+        androidTip.style.display = 'none';
+        installBtn.style.display = 'none';
+    } else {
+        androidTip.style.display = 'block';
+        iosTip.style.display = 'none';
+        
+        // 如果浏览器支持 API 触发安装，则显示安装按钮
+        if (deferredPrompt) {
+            installBtn.style.display = 'block';
+            installBtn.onclick = async () => {
+                modal.classList.remove('show');
+                deferredPrompt.prompt(); // 弹出系统安装确认
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    deferredPrompt = null;
+                }
+            };
+        }
+    }
+    
+    modal.classList.add('show');
+}
+
     // ============================================================
     // 奇遇空间（养娃）功能已移至 baby-plugin.js
     // ============================================================
@@ -78059,6 +78001,8 @@ function regenerateLatestAiResponse() {
     <script src="baby-plugin.js"></script>
     <script src="live-plugin.js"></script>
       <script src="cross-reality-plugin.js"></script> 
+      <script src="multi-offline-plugin.js"></script>
+      <script src="notebook-plugin.js"></script>
 </body>
 </html>
 
