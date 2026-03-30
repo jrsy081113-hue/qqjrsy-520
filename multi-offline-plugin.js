@@ -1,6 +1,6 @@
 /**
- * 多人线下模式插件 V5 - 深度逻辑 & UI 层级修复版
- * 完美复刻私聊线下 Prompt + HTML 小剧场 + 弹窗层级修正
+ * 多人线下模式插件 V6 - 操作逻辑对齐版
+ * 修复重回请求逻辑，新增每层剧情的编辑按钮，移除顶部美化入口
  */
 
 const MultiOfflinePlugin = {
@@ -15,7 +15,6 @@ const MultiOfflinePlugin = {
         this.observeMenu();
     },
 
-    // 1. 样式注入：包含层级修复逻辑
     injectStyle() {
         const style = document.createElement('style');
         style.id = 'mo-plugin-style-v5';
@@ -41,33 +40,13 @@ const MultiOfflinePlugin = {
             .mo-avatar-item.active { border-color: #000; transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 
             .mo-thought-zone { background: #f9f9f9; border-radius: 8px; padding: 10px; margin-bottom: 12px; border-left: 3px solid #000; }
-         
-.mo-thought-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: normal; }
-            /* 在样式表里随便找个位置添加 */
-.mo-card-meta-row span { font-weight: normal !important; }
-
-/* 1. 解决不并排：让容器变成横向排列，并增加间距 */
-.mo-meta-left { 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-}
-
-/* 2. 解决大和粗：强制缩小字号、取消加粗、颜色变淡 */
-.mo-meta-left span:last-child { 
-    font-size: 12px !important; 
-    font-weight: normal !important; 
-    color: #999 !important;
-    line-height: 1;
-}
-
-/* 3. 顺便修复心声标题的加粗 */
-.mo-thought-header { 
-    font-weight: normal !important; 
-}
-.mo-thought-header span { 
-    font-weight: normal !important; 
-}
+            .mo-thought-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: normal; }
+            
+            .mo-card-meta-row span { font-weight: normal !important; }
+            .mo-meta-left { display: flex; align-items: center; gap: 8px; }
+            .mo-meta-left span:last-child { font-size: 12px !important; font-weight: normal !important; color: #999 !important; line-height: 1; }
+            .mo-thought-header { font-weight: normal !important; }
+            .mo-thought-header span { font-weight: normal !important; }
 
             /* HTML 小剧场容器 */
             .mo-html-container { margin-top: 10px; padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #eee; overflow: hidden; }
@@ -75,6 +54,10 @@ const MultiOfflinePlugin = {
             .mo-text-content { font-size: 16px; line-height: 1.8; color: #333; text-align: justify; white-space: pre-wrap; }
             .mo-bottom-bar { background: #fff; padding: 10px 15px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 10px; border-top: 1px solid #e0e0e0; }
             .mo-input { flex: 1; background: #f5f5f5; border: none; border-radius: 20px; padding: 10px 15px; font-size: 15px; resize: none; max-height: 100px; outline: none; }
+
+            /* 呼吸的请求中状态 */
+            .ri-stop-circle-line { font-size: 24px; animation: moPulse 1.5s infinite; }
+            @keyframes moPulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         `;
         document.head.appendChild(style);
     },
@@ -83,12 +66,12 @@ const MultiOfflinePlugin = {
         const div = document.createElement('div');
         div.id = 'multiOfflineScreen';
         div.className = 'page';
+        // 去掉了“美化”入口
         div.innerHTML = `
             <div class="mo-nav-bar">
                 <button class="nav-btn" onclick="MultiOfflinePlugin.exit()"><i class="ri-arrow-left-s-line"></i></button>
                 <div class="nav-title" id="moTitle">多人剧场</div>
                 <div class="mo-nav-right">
-                    <button class="nav-btn" onclick="openOfflineBeautifyModal()"><i class="ri-magic-line"></i></button>
                     <button class="nav-btn" onclick="MultiOfflinePlugin.openSettings()"><i class="ri-settings-3-line"></i></button>
                 </div>
             </div>
@@ -139,18 +122,18 @@ const MultiOfflinePlugin = {
     exit() {
         this.isActive = false;
         if (this.abortController) { this.abortController.abort(); this.abortController = null; }
+        const icon = document.getElementById('moSendIcon');
+        if (icon) icon.className = 'ri-send-plane-fill';
+        
         backToChat();
         renderInitialMessages();
     },
 
-    // 深度获取群聊环境上下文（复制自私聊线下模式）
     async getDeepContext(group) {
-        const settings = await dbManager.get('apiSettings', 'settings') || {};
         const offlineSet = group.offlineSettings || {}; 
 
-        // 1. 世界书 & 文件夹
         const boundBookIds = new Set(group.worldBookIds || []);
-        (group.boundFolderIds || []).forEach(fId => {
+        (group.boundFolderIds ||[]).forEach(fId => {
             worldBooks.forEach(wb => { if(wb.folderId === fId) boundBookIds.add(wb.id); });
         });
         const worldContext = Array.from(boundBookIds).map(id => {
@@ -158,26 +141,17 @@ const MultiOfflinePlugin = {
             return wb ? `[${wb.name}]: ${wb.content}` : '';
         }).join('\n');
 
-        // 2. 预设规则
         const preset = offlineContentPresets.find(p => p.id === offlineSet.contentPresetId) || { content: "无" };
-        
-        // 3. 文风选择
         const style = writingStyles.find(s => s.id === (offlineSet.writingStyleId || offlineModeSettings.writingStyleId));
-        
-        // 4. 开场白
         const opening = openingStatements.find(o => o.id === (offlineSet.openingStatementId || offlineModeSettings.openingStatementId));
 
-        // 5. 人称设置
         const charPerson = offlineSet.charPerson || "third";
         const userPerson = offlineSet.userPerson || "second";
-
-        // 6. 小剧场
         const skit = skits.find(s => s.id === offlineSet.skitId);
 
-        // 7. 参与群成员
         const aiMembers = group.members.filter(id => id !== userProfile.id).map(id => getAuthorById(id));
         const memberProfiles = aiMembers.map(m => {
-            const mems = (characterMemories[m.id] || []).slice(-3).map(mem => mem.content).join(';');
+            const mems = (characterMemories[m.id] ||[]).slice(-3).map(mem => mem.content).join(';');
             return `- ${m.name}: ${m.role}。私聊关系参考：${mems}`;
         }).join('\n');
 
@@ -197,7 +171,7 @@ const MultiOfflinePlugin = {
     renderHistory() {
         const container = document.getElementById('moContentArea');
         container.innerHTML = '';
-        const history = chatHistories[this.currentGroupId] || [];
+        const history = chatHistories[this.currentGroupId] ||[];
         const group = friends.find(g => g.id === this.currentGroupId);
         const aiMembers = group.members.filter(id => id !== userProfile.id).map(id => getAuthorById(id));
         
@@ -210,24 +184,33 @@ const MultiOfflinePlugin = {
             card.className = 'mo-card';
             
             const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            const metaHtml = `<div class="mo-card-meta-row"><div class="mo-meta-left"><span class="mo-floor-tag">#${floor}</span><span>${time}</span></div><i class="ri-delete-bin-line mo-delete-btn" onclick="MultiOfflinePlugin.deleteMsg('${msg.id}')"></i></div>`;
+            
+            // 加入编辑按钮
+            const metaHtml = `
+                <div class="mo-card-meta-row">
+                    <div class="mo-meta-left">
+                        <span class="mo-floor-tag">#${floor}</span>
+                        <span>${time}</span>
+                    </div>
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <i class="ri-edit-2-line" title="编辑" onclick="MultiOfflinePlugin.editMsg('${msg.id}')" style="cursor:pointer; color:#ccc; transition:color 0.2s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#ccc'"></i>
+                        <i class="ri-delete-bin-line" title="删除" onclick="MultiOfflinePlugin.deleteMsg('${msg.id}')" style="cursor:pointer; color:#ccc; transition:color 0.2s;" onmouseover="this.style.color='#ff3b30'" onmouseout="this.style.color='#ccc'"></i>
+                    </div>
+                </div>`;
 
             if (msg.type === 'sent') {
                 const myAvatar = userProfile.avatarImage ? `style="background-image:url('${userProfile.avatarImage}')"` : '';
                 card.innerHTML = `${metaHtml}<div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;"><div class="mo-avatar-item" ${myAvatar}>${userProfile.avatarImage ? '' : '我'}</div><span style="font-size:14px; font-weight:normal;">${userProfile.name} </span></div><div class="mo-text-content">${msg.content}</div>`;
             } else {
-                // AI内容解析
                 let storyAndHtml = msg.content;
                 let heartsVoiceData = null;
 
-                // 分离心声
                 const hvSplit = msg.content.split('[HEARTS_VOICE_SEPARATOR]');
                 if (hvSplit.length > 1) {
                     storyAndHtml = hvSplit[0];
                     try { heartsVoiceData = JSON.parse(hvSplit[1]); } catch(e){}
                 }
 
-                // 分离HTML
                 const skitSplit = storyAndHtml.split('[HTML_SKIT_SEPARATOR]');
                 const storyContent = skitSplit[0].trim();
                 const htmlContent = skitSplit.length > 1 ? skitSplit[1].trim() : null;
@@ -279,6 +262,36 @@ const MultiOfflinePlugin = {
         });
     },
 
+    // 剧情编辑弹窗
+    editMsg(id) {
+        const history = chatHistories[this.currentGroupId] ||[];
+        const msg = history.find(m => m.id === id);
+        if (!msg) return;
+
+        const modal = document.getElementById('offlineEditModal');
+        if (!modal) return;
+        const textarea = document.getElementById('offlineEditTextarea');
+        textarea.value = msg.content;
+        
+        // 绑定新的保存事件，防止和私聊线下的保存冲突
+        const confirmBtn = modal.querySelector('.modal-btn-confirm');
+        const cancelBtn = modal.querySelector('.modal-btn-cancel');
+        
+        confirmBtn.onclick = async () => {
+            msg.content = textarea.value;
+            await saveData(); 
+            this.renderHistory();
+            modal.classList.remove('show');
+            if (typeof showToast === 'function') showToast("剧情已修改");
+        };
+
+        cancelBtn.onclick = () => {
+            modal.classList.remove('show');
+        };
+
+        modal.classList.add('show');
+    },
+
     async deleteMsg(id) {
         showConfirm("删除此楼剧情？", async (yes) => {
             if(!yes) return;
@@ -298,34 +311,68 @@ const MultiOfflinePlugin = {
         zone.querySelector('.mo-thought-body').textContent = `“${charData.thought}”`;
     },
 
+    // 对齐私聊模式的发送与中断逻辑
     async handleSend() {
+        const icon = document.getElementById('moSendIcon');
         const input = document.getElementById('moInput');
-        const text = input.value.trim();
-        if (!text || aiReplyingSet.has(this.currentGroupId)) return;
-        await saveChatMessage(this.currentGroupId, 'sent', text, '', null, 'text', true);
-        input.value = '';
-        this.renderHistory();
-        this.requestAI();
-    },
 
-    async regenerate() {
-        const history = chatHistories[this.currentGroupId];
-        if (history && history.length > 0 && history[history.length-1].type === 'received') {
-            history.pop();
-            await saveData();
+        if (icon.classList.contains('ri-send-plane-fill')) {
+            const text = input.value.trim();
+            if (!text) return;
+
+            await saveChatMessage(this.currentGroupId, 'sent', text, '', null, 'text', true);
+            input.value = '';
             this.renderHistory();
+
+            // 发送后变成小圆圈，并请求AI
+            icon.className = 'ri-stop-circle-line';
             this.requestAI();
+        } else {
+            // 如果正在请求，点击就中止
+            if (this.abortController) {
+                this.abortController.abort();
+                this.abortController = null;
+                if (typeof showToast === 'function') showToast("已停止生成");
+            }
+            icon.className = 'ri-send-plane-fill';
+            aiReplyingSet.delete(this.currentGroupId);
         }
     },
 
-    async requestAI() {
+    // 底栏最左边的重回按钮
+    async regenerate() {
+        if (aiReplyingSet.has(this.currentGroupId)) {
+            if (typeof showToast === 'function') showToast("AI正在回复中...");
+            return;
+        }
+
+        const history = chatHistories[this.currentGroupId] ||[];
+        if (history.length > 0) {
+            const lastMsg = history[history.length - 1];
+            // 只撤销最后一条是AI发的回复
+            if (lastMsg.type === 'received') {
+                history.pop();
+                await saveData();
+                this.renderHistory();
+            }
+        }
+        
+        // 变成等待的小圆点
         const icon = document.getElementById('moSendIcon');
-        icon.className = 'ri-loader-4-line fa-spin';
+        if (icon) {
+            icon.className = 'ri-stop-circle-line';
+        }
+        
+        // 强制向AI索要进度
+        this.requestAI();
+    },
+
+    async requestAI() {
         aiReplyingSet.add(this.currentGroupId);
 
         const settings = await dbManager.get('apiSettings', 'settings') || {};
         const group = friends.find(g => g.id === this.currentGroupId);
-        const history = chatHistories[this.currentGroupId] || [];
+        const history = chatHistories[this.currentGroupId] ||[];
         const lastAction = history.slice().reverse().find(m => m.type === 'sent' && m.isOfflineMessage)?.content || "等待对方反应";
         
         const ctx = await this.getDeepContext(group);
@@ -333,8 +380,7 @@ const MultiOfflinePlugin = {
         let personInstruction = `- 描述角色时，使用${ctx.charPerson === 'third' ? '第三人称(他/她)' : (ctx.charPerson === 'second' ? '第二人称(你)' : '第一人称(我)')}\n`;
         personInstruction += `- 提到用户 "${userProfile.name}" 时，使用${ctx.userPerson === 'second' ? '第二人称(你)' : '第三人称(用户名字)'}`;
 
-        // --- 【核心修复】：提取并清洗最近的聊天与剧情记录 ---
-        const recentHistory = history.slice(-30); // 读取最近30条历史
+        const recentHistory = history.slice(-30); 
         let chatHistoryContext = '';
         if (recentHistory.length > 0) {
             chatHistoryContext = recentHistory.map(m => {
@@ -345,14 +391,12 @@ const MultiOfflinePlugin = {
                 if (m.contentType !== 'text') {
                     cleanContent = `[${m.contentType}]`;
                 } else if (m.isOfflineMessage && m.type === 'received') {
-                    // 【关键清洗】：必须剥离 AI 返回的心声和 HTML 代码，只保留小说正文给AI看，防止Token爆炸
                     const hvSplit = m.content.split('[HEARTS_VOICE_SEPARATOR]');
                     let storyAndHtml = hvSplit[0];
                     const skitSplit = storyAndHtml.split('[HTML_SKIT_SEPARATOR]');
                     cleanContent = skitSplit[0].trim();
                 }
                 
-                // 增加类型标识，让 AI 清楚区分“线上聊天”和“线下动作”
                 let prefix = '';
                 if (m.isOfflineMessage) {
                     prefix = m.type === 'sent' ? '(线下行动)' : '(线下剧情)';
@@ -365,7 +409,6 @@ const MultiOfflinePlugin = {
         } else {
             chatHistoryContext = '(无历史记录，请根据开场设定主动开始一段故事。)';
         }
-        // --- 【修复结束】 ---
 
         const prompt = `
 【模式】: 多人线下剧场 (晋江/番茄风格)
@@ -399,12 +442,10 @@ ${ctx.skit ? `【小剧场指令】: ${ctx.skit}` : ''}
 
 【输出格式铁律 (必须包含两个分隔符)】
 你的回复必须严格遵循以下结构：
-正文内容(纯文本)...
-[HTML_SKIT_SEPARATOR]
-${ctx.skit ? '此处按指令生成HTML交互代码' : '无'}
-[HEARTS_VOICE_SEPARATOR]
+正文内容(纯文本)...[HTML_SKIT_SEPARATOR]
+${ctx.skit ? '此处按指令生成HTML交互代码' : '无'}[HEARTS_VOICE_SEPARATOR]
 {
-  "characters": [
+  "characters":[
     { "name": "角色名", "emoji": "(颜文字)", "favorability": "数值/100 (感官描述)", "thought": "此处严禁复读正文！必须描写该性格角色在此时此刻最真实、最符合人设的内心潜台词。" }
   ]
 }
@@ -421,9 +462,17 @@ ${ctx.skit ? '此处按指令生成HTML交互代码' : '无'}
             const result = await response.json();
             await saveChatMessage(this.currentGroupId, 'received', result.choices[0].message.content, '', null, 'text', true);
             this.renderHistory();
-        } catch (e) { console.error(e); }
-        finally {
-            icon.className = 'ri-send-plane-fill';
+        } catch (e) {
+            if (e.name === 'AbortError') {
+                console.log("多人线下生成已被中断");
+            } else {
+                console.error(e);
+            }
+        } finally {
+            const icon = document.getElementById('moSendIcon');
+            if (icon) {
+                icon.className = 'ri-send-plane-fill'; // 恢复状态
+            }
             aiReplyingSet.delete(this.currentGroupId);
             this.abortController = null;
         }
