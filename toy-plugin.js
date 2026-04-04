@@ -1,6 +1,6 @@
 /**
- * 智能玩具控制插件 (Toy Plugin) - 修复提示层级 & 免密版
- * 包含：密码验证、Web Bluetooth 蓝牙连接、震动频率/强度控制
+ * 智能玩具控制插件 (Toy Plugin) - 终极多协议适配 & iOS支持版
+ * 包含：密码验证、Web Bluetooth 蓝牙连接、多品牌协议嗅探、震动频率/强度控制
  */
 
 (function() {
@@ -203,6 +203,15 @@
     let currentPattern = 'constant';
     let vibrationInterval = null;
 
+    // 智能多品牌协议配置
+    let detectedProtocol = 'unknown'; 
+    const TOY_SERVICES = {
+        LOVENSE: '50300001-0023-4bd4-bbd5-a6920e4c5653',
+        MAGIC_MOTION: '78667579-2868-4bd0-a8ce-f6018d456340',
+        GENERIC_FFF0: 0xFFF0,
+        GENERIC_FFE0: 0xFFE0
+    };
+
     // ==========================================
     // 3. UI 交互函数 (暴露给全局)
     // ==========================================
@@ -211,7 +220,7 @@
         // 关闭底部的加号菜单
         if (typeof hideFunctionMenus === 'function') hideFunctionMenus();
         
-        // 【核心修改】：检查本地存储，看是否已经验证过密码
+        // 检查本地存储，看是否已经验证过密码
         if (localStorage.getItem('jrsy_toy_authenticated') === 'true') {
             // 如果验证过了，直接打开面板，跳过密码
             openToyControlModal();
@@ -229,7 +238,7 @@
     window.verifyToyPassword = function() {
         const pwd = document.getElementById('toyPwdInput').value;
         if (pwd === '3700') {
-            // 【核心修改】：密码正确，存入本地存储，永久免密
+            // 密码正确，存入本地存储，永久免密
             localStorage.setItem('jrsy_toy_authenticated', 'true');
             
             closeToyPasswordModal();
@@ -292,13 +301,24 @@
     };
 
     // ==========================================
-    // 4. Web Bluetooth API (硬件连接层)
+    // 4. Web Bluetooth API (多品牌智能适配版)
     // ==========================================
 
     window.startBluetoothConnection = async function() {
         if (!navigator.bluetooth) {
-            if (typeof showAlert === 'function') {
-                showAlert("您的浏览器不支持 Web Bluetooth API。\n(已开启模拟演示模式)");
+            // 专门针对 iOS 设备的拦截与提示
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
+            if (isIOS) {
+                if (typeof showAlert === 'function') {
+                    showAlert("苹果 iOS 系统原生浏览器不支持蓝牙控制。\n\n🍏 请前往 App Store 免费下载【Bluefy】浏览器，用它打开本网页即可完美连接！");
+                } else {
+                    alert("苹果 iOS 系统原生浏览器不支持蓝牙控制。\n请前往 App Store 下载【Bluefy】浏览器打开本网页！");
+                }
+            } else {
+                if (typeof showAlert === 'function') {
+                    showAlert("您的浏览器不支持 Web Bluetooth API。\n建议使用安卓 Chrome 或 Edge 浏览器。\n(已开启模拟演示模式)");
+                }
             }
             simulateConnection();
             return;
@@ -308,20 +328,83 @@
             document.getElementById('toyStatusText').textContent = "正在搜索蓝牙...";
             document.getElementById('toyConnectBtn').innerHTML = '<i class="ri-loader-4-line fa-spin"></i> 搜索中';
 
+            // 1. 请求连接：把所有可能用到的服务 UUID 都声明
             bluetoothDevice = await navigator.bluetooth.requestDevice({
                 acceptAllDevices: true, 
-                optionalServices: ['00001802-0000-1000-8000-00805f9b34fb']
+                optionalServices: [
+                    TOY_SERVICES.LOVENSE, 
+                    TOY_SERVICES.MAGIC_MOTION, 
+                    TOY_SERVICES.GENERIC_FFF0, 
+                    TOY_SERVICES.GENERIC_FFE0,
+                    '00001802-0000-1000-8000-00805f9b34fb' // 兼容旧版或标准设备
+                ]
             });
 
-            document.getElementById('toyStatusText').textContent = "正在连接...";
+            document.getElementById('toyStatusText').textContent = "正在连接服务...";
             const server = await bluetoothDevice.gatt.connect();
             bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
 
-            onConnected(bluetoothDevice.name);
+            document.getElementById('toyStatusText').textContent = "正在识别设备协议...";
+            
+            // 2. 智能嗅探与通道建立
+            bluetoothCharacteristic = null;
+            detectedProtocol = 'unknown';
+
+            // 尝试 A：Lovense (小怪兽/逗豆鸟等海外版)
+            try {
+                const service = await server.getPrimaryService(TOY_SERVICES.LOVENSE);
+                bluetoothCharacteristic = await service.getCharacteristic('50300002-0023-4bd4-bbd5-a6920e4c5653');
+                detectedProtocol = 'LOVENSE';
+            } catch(e) { console.log("Not Lovense protocol"); }
+
+            // 尝试 B：Magic Motion (魔动)
+            if (!bluetoothCharacteristic) {
+                try {
+                    const service = await server.getPrimaryService(TOY_SERVICES.MAGIC_MOTION);
+                    bluetoothCharacteristic = await service.getCharacteristic('7866757a-2868-4bd0-a8ce-f6018d456340');
+                    detectedProtocol = 'MAGIC_MOTION';
+                } catch(e) { console.log("Not Magic Motion protocol"); }
+            }
+
+            // 尝试 C：国产公版 FFF0 (雷霆、司沃康、各种白牌)
+            if (!bluetoothCharacteristic) {
+                try {
+                    const service = await server.getPrimaryService(TOY_SERVICES.GENERIC_FFF0);
+                    // 通常 FFF2 或 FFF1 是写入通道
+                    try { bluetoothCharacteristic = await service.getCharacteristic(0xFFF2); } 
+                    catch(e) { bluetoothCharacteristic = await service.getCharacteristic(0xFFF1); }
+                    detectedProtocol = 'GENERIC_FFF0';
+                } catch(e) { console.log("Not FFF0 protocol"); }
+            }
+
+            // 尝试 D：串口透传 FFE0
+            if (!bluetoothCharacteristic) {
+                try {
+                    const service = await server.getPrimaryService(TOY_SERVICES.GENERIC_FFE0);
+                    bluetoothCharacteristic = await service.getCharacteristic(0xFFE1);
+                    detectedProtocol = 'GENERIC_FFE0';
+                } catch(e) { console.log("Not FFE0 protocol"); }
+            }
+
+            // 3. 判断是否嗅探成功
+            if (bluetoothCharacteristic) {
+                console.log(`[Toy Connected] 成功识别协议: ${detectedProtocol}`);
+                onConnected(bluetoothDevice.name);
+            } else {
+                throw new Error("设备已连接，但无法识别其通信通道。该玩具可能使用了未知的私有加密协议。");
+            }
 
         } catch (error) {
-            console.error("蓝牙连接失败:", error);
-            simulateConnection(); 
+            console.error("蓝牙连接/嗅探失败:", error);
+            document.getElementById('toyStatusText').textContent = "连接失败或未开放通道";
+            document.getElementById('toyConnectBtn').innerHTML = '<i class="ri-bluetooth-connect-line"></i> 搜索';
+            
+            if (typeof showAlert === 'function') {
+                // 如果是用户主动取消，不弹长报错
+                if (error.message.includes("User cancelled")) return;
+                showAlert("连接失败：\n" + error.message);
+            }
+            bluetoothDevice = null;
         }
     };
 
@@ -346,6 +429,7 @@
         
         bluetoothDevice = null;
         bluetoothCharacteristic = null;
+        detectedProtocol = 'unknown';
     }
 
     function disconnectToy() {
@@ -357,12 +441,12 @@
 
     function simulateConnection() {
         setTimeout(() => {
-            onConnected("Lovense (模拟)");
+            onConnected("虚拟演示设备");
         }, 1500);
     }
 
     // ==========================================
-    // 5. 硬件通信与模式解析引擎
+    // 5. 硬件通信引擎 (多协议翻译器)
     // ==========================================
 
     function applyVibrationToDevice() {
@@ -400,15 +484,49 @@
 
     async function sendBluetoothCommand(speedValue) {
         if (!bluetoothCharacteristic) {
-            console.log(`[Toy Command] 震动强度 -> ${speedValue}%`);
+            console.log(`[Toy Virtual] 虚拟震动 -> ${speedValue}% (协议: ${detectedProtocol})`);
             return;
         }
 
         try {
+            // 将 0-100 的百分比转换为 0-20 的硬件等级 (绝大多数玩具是20级或10级)
             let hardwareSpeed = Math.round(speedValue / 5); 
-            let encoder = new TextEncoder();
-            let command = encoder.encode(`Vibrate:${hardwareSpeed};`);
-            await bluetoothCharacteristic.writeValue(command);
+            if (hardwareSpeed > 20) hardwareSpeed = 20;
+            if (hardwareSpeed < 0) hardwareSpeed = 0;
+
+            let commandArray;
+
+            // 智能路由：根据嗅探到的品牌协议，发送不同的指令包
+            switch (detectedProtocol) {
+                case 'LOVENSE':
+                    // Lovense 协议：发送纯文本 "Vibrate:级别;"
+                    const cmdString = `Vibrate:${hardwareSpeed};`;
+                    commandArray = new TextEncoder().encode(cmdString);
+                    break;
+
+                case 'MAGIC_MOTION':
+                    // 魔动协议：11字节十六进制数组，第9位是速度
+                    let mmSpeed = Math.round(speedValue / 10); // 0-10
+                    commandArray = new Uint8Array([0x0B, 0xFF, 0x04, 0x0A, 0x55, 0x54, 0x00, 0x00, 0x00, mmSpeed, 0x00]);
+                    break;
+
+                case 'GENERIC_FFF0':
+                case 'GENERIC_FFE0':
+                default:
+                    // 国产通用协议：通常是简单的十六进制包
+                    let genericSpeed = Math.round(speedValue / 10); // 0-10
+                    let checksum = (0x03 + genericSpeed) & 0xFF;
+                    commandArray = new Uint8Array([0xAA, 0x55, 0x03, genericSpeed, checksum]);
+                    break;
+            }
+
+            // 优先使用 writeValueWithoutResponse，不等待设备回执，防止连续滑动时数据堵塞报错
+            if (bluetoothCharacteristic.properties.writeWithoutResponse) {
+                await bluetoothCharacteristic.writeValueWithoutResponse(commandArray);
+            } else {
+                await bluetoothCharacteristic.writeValue(commandArray);
+            }
+            
         } catch (error) {
             console.error("发送震动指令失败:", error);
         }
