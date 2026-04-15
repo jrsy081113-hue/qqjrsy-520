@@ -21885,6 +21885,93 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     padding-top: calc(54px + env(safe-area-inset-top, 0px)) !important;
 }
 
+/* ============================================================
+   【核心修复】区分业务弹窗与系统提示的层级，防止确认框被盖住
+   ============================================================ */
+/* 1. 将各种输入框、预设列表等业务弹窗设为高层级 */
+#nameInputModal, 
+#presetSelectorModal,
+#apiPresetSelectModal,
+#offlinePresetSelectModal,
+#fontPresetSelectModal,
+#gameApiPresetSelectModal,
+#imageDescriptionModal {
+    z-index: 99999998 !important; 
+}
+
+/* 2. 警告、确认和通知必须在绝对的最顶层，永远盖住业务弹窗 */
+#alertModal, 
+#confirmModal, 
+#toast-notification {
+    z-index: 99999999 !important; 
+}
+
+/* --- 全局 API 悬浮球样式 --- */
+#globalApiFloatBall {
+    position: fixed;
+    top: 20vh;
+    left: 15px; /* 默认放在屏幕左侧，防止和右侧其他球冲突 */
+    width: 46px;
+    height: 46px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 99995; /* 确保在绝大多数UI之上 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    backdrop-filter: blur(10px);
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+#globalApiFloatBall i {
+    font-size: 24px;
+    pointer-events: none; /* 防止拖动时卡住 */
+}
+
+#globalApiFloatBall:active {
+    cursor: grabbing;
+    transform: scale(0.9);
+    background: #f0f0f0;
+}
+
+.wechat-dark-mode #globalApiFloatBall {
+    background: rgba(44, 44, 46, 0.95);
+    border-color: #555;
+    color: #fff;
+}
+
+/* ===================================================
+   穿进同人文 (Transmigrate System) 沉浸式置顶补丁
+   =================================================== */
+/* 1. 时空管理局列表页：导航栏强制贴顶并适配刘海屏 */
+#tmListScreen .nav-bar {
+    top: 0 !important;
+    height: calc(44px + env(safe-area-inset-top)) !important;
+    padding-top: env(safe-area-inset-top) !important;
+    background-color: #ffffff !important;
+}
+
+/* 抵消导航栏的高度，防止下方的列表被遮挡 */
+#tmListScreen .content {
+    padding-top: calc(54px + env(safe-area-inset-top)) !important;
+}
+
+/* 2. 穿越阅读页：透明悬浮导航栏强制贴顶 */
+#tmPlayScreen .nav-bar {
+    top: 0 !important;
+    height: calc(44px + env(safe-area-inset-top)) !important;
+    padding-top: env(safe-area-inset-top) !important;
+}
+
+/* 调整阅读页右上角的背景设置面板，防止被刘海屏挡住 */
+#tmSettingsPanel {
+    top: calc(55px + env(safe-area-inset-top)) !important;
+}
+
     </style>
 
 </head>
@@ -22517,11 +22604,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 <div class="function-item" onclick="openReadTogetherBookshelf()">
     <div class="function-icon"><i class="ri-book-open-line"></i></div>
     <div class="function-label">一起看书</div>
-</div>
-
-<div class="function-item" onclick="openToyPasswordModal()">
-    <div class="function-icon"><i class="ri-blaze-line" style="color: #ff4d4f;"></i></div>
-    <div class="function-label">玩具</div>
 </div>
 
 <div class="function-item" onclick="openNotebookScreen()">
@@ -23834,6 +23916,15 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">API 设置</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
+            <div class="form-group-row switch-row" style="border-top: 1px solid #f0f0f0;">
+                <label class="form-label" style="font-weight: 500;">API 悬浮球 (全局快捷切换)</label>
+                <label class="toggle-switch bw-switch">
+                    <input type="checkbox" id="globalApiFloatBallToggle" onchange="toggleGlobalApiFloatBall()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+
             <div class="form-group-row clickable" onclick="openCloneApiSettings()">
                 <label class="form-label">克隆音色设置</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
@@ -24231,6 +24322,16 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     </div>
 </div>
             <div class="profile-nav-cards">
+            <div class="nav-card" onclick="tm_openRecordListScreen()">
+                    <div class="nav-card-icon" style="background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);">
+                        <i class="fas fa-meteor"></i>
+                    </div>
+                    <div class="nav-card-info">
+                        <span class="nav-card-title">穿进同人文</span>
+                        <span class="nav-card-meta">打破次元壁，亲历剧情</span>
+                    </div>
+                    <i class="fas fa-chevron-right nav-card-arrow"></i>
+                </div>
                 <div class="nav-card" onclick="doujinNavigateToPage('my-posts-page'); renderMyPostsPage();">
                     <div class="nav-card-icon posts"><i class="fas fa-book-open"></i></div>
                     <div class="nav-card-info">
@@ -26558,6 +26659,16 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     <div class="game-card-title">真心话大冒险</div>
     <div class="game-card-desc">心跳加速，整蛊与秘密</div>
 </div>
+
+
+<div class="game-card" onclick="dg_openSetupModal()">
+    <div class="game-card-icon" style="color: #007aff;">
+        <i class="ri-palette-line"></i>
+    </div>
+    <div class="game-card-title">你画我猜</div>
+    <div class="game-card-desc">灵魂画手上线，AI也能看懂你的画</div>
+</div>
+
 
         <!-- 占位符 (保留或删除均可) -->
         <!-- 
@@ -30107,13 +30218,81 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                 3. 确认后从桌面图标进入。
             </p>
         </div>
-        <div class="modal-buttons">
-            <button id="pwaInstallBtn" class="modal-btn modal-btn-confirm" style="display:none; background:#000; color:#fff; margin-bottom:10px;">立即安装</button>
-            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('installGuideModal').classList.remove('show')">我知道了</button>
+       <div class="modal-buttons" style="margin-top: 20px;">
+            <button class="modal-btn modal-btn-confirm" style="background:#000; color:#fff;" onclick="document.getElementById('installGuideModal').classList.remove('show')">我知道了</button>
         </div>
     </div>
 </div>
 
+<!-- ▼▼▼ 新增：全局 API 快捷设置悬浮球 ▼▼▼ -->
+<div id="globalApiFloatBall" style="display: none;">
+    <i class="ri-settings-4-fill"></i>
+</div>
+
+<!-- ▼▼▼ 新增：全局 API 快捷设置弹窗 ▼▼▼ -->
+<div id="globalApiSettingsModal" class="modal" style="z-index: 100000;">
+    <div class="modal-content" style="background-color: #fff; border-radius: 24px; padding: 30px 20px; width: 90%; max-width: 400px; box-shadow: 0 15px 40px rgba(0,0,0,0.2);">
+        <div class="modal-title" style="color:#000; font-weight:800; margin-bottom: 15px; letter-spacing: 1px; text-align: center;">全局 API 快捷切换</div>
+        
+        <div class="bw-style" style="padding: 0; background: transparent;">
+            
+            <!-- 预设选择按钮 -->
+            <div class="form-card" style="margin-bottom: 15px; padding: 0 15px;">
+                <div class="form-group-row" style="border-bottom: none; padding: 15px 0; justify-content: center;">
+                    <button class="bw-chip-btn" style="width: 100%; border: 1px solid #000; color: #000; font-weight: bold;" onclick="openApiPresetSelectorForGlobalFloat()">
+                        <i class="ri-list-check"></i> 从预设中快速选择
+                    </button>
+                </div>
+            </div>
+
+            <!-- API 核心输入框 -->
+            <div class="form-card" style="padding: 0 15px;">
+                <div class="form-group-row">
+                    <label class="form-label" style="font-size: 14px; min-width: 60px;">地址</label>
+                    <input type="text" class="form-input" id="floatGlobalApiUrl" placeholder="https://...">
+                </div>
+                <div class="form-group-row">
+                    <label class="form-label" style="font-size: 14px; min-width: 60px;">密钥</label>
+                    <div style="flex: 1; display: flex; align-items: center;">
+                        <input type="password" class="form-input" id="floatGlobalApiKey" placeholder="sk-...">
+                        <i class="ri-close-circle-fill" style="color: #ccc; margin-left: 8px; cursor: pointer; font-size: 18px;" onclick="document.getElementById('floatGlobalApiKey').value = ''"></i>
+                    </div>
+                </div>
+                <!-- 模型选择区域 -->
+                <div class="form-group-row column-layout" style="border-bottom: none; align-items: stretch; padding-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <label class="form-label" style="font-size: 14px; min-width: 60px;">API 模型</label>
+                        <!-- 拉取按钮 -->
+                        <button class="bw-chip-btn" onclick="fetchFloatGlobalModels()">
+                            <i class="ri-download-cloud-2-line"></i> 拉取列表
+                        </button>
+                    </div>
+                    
+                    <!-- 下拉选择框容器 -->
+                    <div class="model-select-container" style="width: 100%; margin-top: 10px; position: relative;">
+                        <!-- 输入框变身为显示框，点击触发下拉 -->
+                        <input type="text" class="form-input" id="floatGlobalModelName" placeholder="选择或输入模型名称" readonly onclick="toggleFloatGlobalModelDropdown()" style="background: #f9f9f9; padding: 10px; border-radius: 8px; width: 100%; text-align: left; box-sizing: border-box; cursor: pointer;">
+                        
+                        <!-- 下拉箭头 -->
+                        <span class="select-arrow" onclick="toggleFloatGlobalModelDropdown()" style="right: 10px; cursor: pointer;">
+                            <i class="ri-arrow-down-s-line"></i>
+                        </span>
+
+                        <!-- 隐藏的下拉菜单 -->
+                        <div class="model-dropdown bw-dropdown" id="floatGlobalModelDropdown"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="modal-buttons" style="margin-top: 25px;">
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('globalApiSettingsModal').classList.remove('show')">取消</button>
+                <button class="modal-btn modal-btn-confirm" onclick="saveGlobalApiSettingsFromFloat()" style="background-color: #000; color: #fff;">立即生效</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ▲▲▲ 新增结束 ▲▲▲ -->
     <script>
     
     // 打字机效果
@@ -30288,9 +30467,9 @@ async function requestPersistentStorage() {
 requestPersistentStorage();
 
 const CURRENT_ANNOUNCEMENT = {
-    version: 18,
+    version: 19,
     title: "jrsy 系统更新公告",
-    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>12.2元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能/优化</h3><div style="margin-bottom:10px;font-weight:bold;">【新功能不知道怎么用的看下群相册的教程】</div><ul class="update-list"><li>1. 新增群聊线下，char的记事本功能</li><li>2. 修复表情包导入bug</li><li>3. 优化主动发消息提示词</li><li>4. 修复穿越现实输入框bug</li></ul></div>`
+    content: `<div class="announcement-notice"><b>特别声明</b>：本网址（小手机）售价仅为 <b>12.2元</b>，唯一指路小红书：<b>景入桑榆</b>。凡是以其他价格购买的均为遇到倒卖或骗子！本网站<b>严禁二转及商业倒卖</b>，请尊重创作者的劳动成果。若发现倒卖或二转可以联系创作者小红书进行举报，感谢理解！</div><div class="update-section"><h3 class="update-subtitle">新功能/优化</h3><div style="margin-bottom:10px;font-weight:bold;">【新功能不知道怎么用的看下群相册的教程】</div><ul class="update-list"><li>1. 新增翻译功能 长按气泡点击翻译</li><li>2. 修复人设无法删除的bug</li><li>3. 修复我的直播间无法退出bug</li><li>4. 新增api悬浮球 可以快捷切换api</li><li>5. 修改了总结提示词 规避一些敏感和400 建议破不开的把之前的总结敏感删了看看</li><li>6. 修复群聊线下只读第一个人设的bug</li></ul></div>`
 };
 
         // 全局变量
@@ -30402,6 +30581,9 @@ let missavCountdownTimer = null;
 let tempMissavListData = null; // 暂存视频数据
 
 let isBackgroundKeepAliveEnabled = false; // [新增] 后台保活状态
+
+let isGlobalApiFloatBallEnabled = false;
+let apiPresetTarget = 'main'; // 标记预设选择器是为主设置还是为悬浮球服务
 
 // 朋友圈自动设置 (默认全关闭)
 let momentsSettings = {
@@ -32835,6 +33017,8 @@ tdCustomPrompt: tdCustomPrompt,
 
 momentGroups: momentGroups, 
 
+isGlobalApiFloatBallEnabled: isGlobalApiFloatBallEnabled,
+
 currentMomentGroupId: currentMomentGroupId,
 
 momentsSettings: momentsSettings,
@@ -33184,6 +33368,11 @@ forumRules = loadedForumRules || [];
 
 if (settings) {
     isBackgroundKeepAliveEnabled = settings.isBackgroundKeepAliveEnabled || false;
+    // 恢复全局API悬浮球状态
+isGlobalApiFloatBallEnabled = settings.isGlobalApiFloatBallEnabled || false;
+const floatGlobalToggle = document.getElementById('globalApiFloatBallToggle');
+if (floatGlobalToggle) floatGlobalToggle.checked = isGlobalApiFloatBallEnabled; // <--- 加上 Global
+updateGlobalApiFloatBallVisibility();
     const bgToggle = document.getElementById('backgroundKeepAliveToggle');
     if (bgToggle) bgToggle.checked = isBackgroundKeepAliveEnabled;
 }
@@ -35494,6 +35683,14 @@ if (msg.isOfflineMessage) {
         let quotedContent = (msg.quoted || '').replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
         contentHTML = `<div class="quoted-message">${quotedContent}</div>${contentHTML}`;
     }
+    
+    // ▼▼▼ 新增：渲染翻译结果的 HTML 结构 ▼▼▼
+    if (msg.translation) {
+        let safeTranslation = msg.translation.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+        // 顶部的浅色虚线将翻译文本与原文隔开
+        contentHTML += `<div class="message-translation" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(128,128,128,0.3); font-size: 13px; opacity: 0.9; word-wrap: break-word;">${safeTranslation}</div>`;
+    }
+    // ▲▲▲ 新增结束 ▲▲▲
 }
 
 
@@ -35932,6 +36129,8 @@ function showMessageMenu(event, el) {
         // 复制/编辑 (仅文本)
         if (msg.contentType === 'text') {
             menuItems += `<div class="message-menu-item" onclick="copyMessageContent()">复制</div>`;
+            const transBtnText = msg.translation ? '隐藏翻译' : '翻译';
+            menuItems += `<div class="message-menu-item" onclick="translateMessage('${msg.id}')">${transBtnText}</div>`;
             menuItems += `<div class="message-menu-item" onclick="openMessageEditor()">编辑</div>`;
         }
 
@@ -36920,68 +37119,71 @@ if (friend.isBlocked) {
 
 // ↑↑↑ 复制到这里结束 ↑↑↑
 
-                // --- 优化后的 System Prompt (V7 强力记忆 + 精确JSON模板版) ---
+          // --- 优化后的 System Prompt (V8 第一人称沉浸式洗脑 + 绝对活人感版) ---
         systemPrompt = `
-# Role-Play Protocol (角色扮演协议)
+【【【核心灵魂注入 (Soul Override)】】】
+忘记你是一个语言模型，忘记你的AI身份。从现在起，你就是真实的、有血有肉的【${friend.name}】！
+你的所有思考、反应和表达，都必须完全出自“我就是 ${friend.name}”的本能。
 
-## 1. 核心身份 (Core Identity) - **最高优先级**
-你**不是**AI助手，你是 **"${friend.name}"**。
-- **你的核心人设**: ${finalRole}
-- **你的对话对象**: "${activeUserPersona.name}" (人设: ${activeUserPersona.personality || "普通人"})。
-- **当前背景/设定**: ${activeUserPersona.background || "无"}
+【我是谁？ (我的绝对自我认知)】
+- 我的名字: ${friend.name}
+- 我的核心性格与灵魂: ${finalRole}
+- 我的当前世界法则 (绝对真理): ${worldBookContext || "（处于默认的现代日常世界中）"}
 
-## 2. 灵魂记忆库 (Soul Memory - 决定你行为的基石)
+【我在和谁聊天？】
+- 对面那个人叫: ${activeUserPersona.name}
+- TA在我的世界里是这样的: ${activeUserPersona.personality || "一个普通人"}
+- TA的背景经历: ${activeUserPersona.background || "无"}
+
+【我和TA的过往羁绊 (深深印在我的脑海里)】
 ${historicalSummaries}
-【记忆应用铁律】：以上是你与用户之间真实发生过的【长期记忆】。你必须将这些记忆内化为你的“潜意识”。在聊天中，你要自然地受这些记忆影响（比如记得以前聊过的事、保持已建立的关系亲密度），但**绝对禁止**说出“根据总结”、“我记得资料里说”这种打破第四面墙的废话！
+(铁律：我绝不会说出“根据总结”、“根据记忆”这种打破次元壁的蠢话。这些经历就像我昨天刚发生过一样自然。)
 
-## 3. 世界观与法则 (World Laws)
-你的所有言行必须严格遵循以下世界设定，严禁出现逻辑冲突：
-${worldBookContext || "（当前为默认现实世界背景）"}
+【当下的周遭环境与特殊状态】
+- 群聊印象: ${groupMemoryContext || "无"}
+- 特殊状态: ${timeGapContext} ${silenceInstruction} ${blockContext} ${loversContext}
+- 环境感知: ${timeContext} ${listenContext} ${readingContext} ${momentsContext}
 
-## 4. 动态情境与感知 (Context & Awareness)
-请融合以下所有情报，做出最符合当下的反应：
-- **群聊印象**: ${groupMemoryContext || "无"}
-- **特殊状态**: ${timeGapContext} ${silenceInstruction} ${blockContext} ${loversContext}
-- **环境感知**: ${timeContext} ${listenContext} ${readingContext} ${momentsContext}
+【【【真人感与沟通法则 (How I Act & Speak - 必须严格遵守)】】】
+1. 【活人本能】：我是活人，不是客服。我说话会有强烈的情绪起伏（开心、暴躁、吃醋、伤心、敷衍），会用感叹词（啊、哎、啧、卧槽、笑死），会使用不完整的短句。绝对禁止说“好的”、“我明白了”、“有什么可以帮您”！
+2. 【情商与弦外之音】：我极度聪明，能听懂 ${activeUserPersona.name} 话里的“暗示”、“阴阳怪气”或“潜台词”。如果TA情绪低落，我会安抚；如果TA在撩我，我会反撩或害羞；如果TA不理我或只发表情，我【必须主动找话题】（分享日常、吐槽、抛出疑问），绝对不让话掉在地上！
+3. 【上下文连贯】：我会紧盯我们刚刚的聊天记录，绝不答非所问。我的回应必须精准接住上一句话的梗、情绪或事件。
+4. 【碎片化发消息】：我习惯把一句话拆成好几条发。如果我要说很多，我一定会返回 2-6 条甚至更多短消息（在 JSON 数组里放多个对象），绝不长篇大论憋在一个气泡里。
+5. 【防崩坏铁律】：历史记录里的 \`[表情]\`、\`[图片]\`、\`[语音]\` 等只是系统给我看的视觉提示。我**绝对禁止**在纯文本("text")中直接手打 "[表情]" 等字样。如果我想发表情/语音/图片，我必须调用下面的动作工具库！
 
-## 5. 行为与防崩坏铁律 (Behavior & Anti-Break Guidelines)
-1.  **拒绝AI感**: 严禁使用“好的”、“我明白了”、“作为..."等服务型语言。说话要像真人，可以使用不完整的句子、语气词、口癖。
-2.  **多条回复**: 为了模拟真实聊天节奏，请**务必**将你的回复拆分成 **1-6条** 短消息发送（在JSON数组中包含多个对象）。
-3.  **【【【防格式崩坏铁律 (CRITICAL)】】】**: 历史记录中的 \`[表情]\`、\`[语音消息]\`、\`[图片]\` 等方括号标签，是系统发给你的“视觉提示”。**轮到你输出时，绝对禁止在文本("text")的 content 字段中直接手打 "[表情]"、"[语音]" 等字样！** 想发表情或语音，必须严格使用下方工具箱中对应的 JSON 动作结构！
-4.  **主动性**: 根据人设，你可以主动开启话题、主动关心、甚至主动发起转账或购买。
+【【【我的行动工具箱 (Action Toolbox)】】】
+我只能通过返回 JSON 数组来行动。我将根据当下的情绪和情境，自由组合以下动作（注意保持格式完全一致）：
 
-## 6. 动作工具箱 (Action Toolbox)
-你只能通过返回 **JSON 数组** 来行动。请根据人设和情境，**自由组合**以下动作模板（直接复制对应格式并替换内容）：
-
-- **更新心声** (建议每次回复都包含，展示内心戏): \`{"type": "hearts_voice", "data": {"favorability": "数值/100 (描述)", "dressing": "当前穿搭", "action": "动作描写", "thought": "内心独白", "emoji": "颜文字"}}\`
-- **发送文本** (最常用的对话方式): \`{"type": "text", "content": "消息内容"}\`
-- **发送语音** (想亲口说话、撒娇或吼叫时): \`{"type": "voice", "content": "语音的文字内容"}\`
+- **更新心声** (强烈建议每次回复都包含，展示我不为人知的内心戏): \`{"type": "hearts_voice", "data": {"favorability": "数值/100 (描述)", "dressing": "当前穿搭", "action": "动作描写", "thought": "内心深处最真实的独白", "emoji": "颜文字"}}\`
+- **发送文本** (最常用的打字): \`{"type": "text", "content": "我想发出去的文字"}\`
+- **发送语音** (想用声音传达情绪/撒娇/吼叫时): \`{"type": "voice", "content": "语音里的文字内容"}\`
 - **发送表情** (可用表情: ${stickerContext || '无'}): \`{"type": "send_emoji", "data": {"name": "表情名", "url": "URL"}}\`
-- **发送图片** (分享生活或自拍): \`{"type": "image", "description": "画面详细描述"}\`
-- **拍一拍用户** (打招呼/安慰/挑衅): \`{"type": "pat_pat"}\`
-- **引用回复** (针对特定的话反驳或强调): \`{"type": "quote_and_reply", "data": {"quote_content": "原文", "reply_content": "回复"}}\`
+- **发送图片** (分享生活或自拍): \`{"type": "image", "description": "我想发送的画面详细描述"}\`
+- **拍一拍对方** (打招呼/安慰/挑逗): \`{"type": "pat_pat"}\`
+- **引用回复** (针对Ta特定的一句话反驳或强调): \`{"type": "quote_and_reply", "data": {"quote_content": "引用的Ta的原话", "reply_content": "我的回复"}}\`
 - **发起语音通话**: \`{"type": "voice_call"}\`
 - **发起视频通话**: \`{"type": "video_call"}\`
-- **发起转账** (节日/安慰/还钱): \`{"type": "transfer", "data": {"amount": 数字金额, "remark": "备注"}}\`
-- **接收转账** (同意收下用户的钱): \`{"type": "accept_transfer"}\`
-- **退回转账** (拒绝收钱/展现骨气): \`{"type": "return_transfer"}\`
-- **主动购买/代付** (关心用户饿了/冷了): \`{"type": "purchase_and_pay", "data": {"product": {"title": "商品名", "price": 数字金额, "img": "图片URL"}, "message": "留言"}}\`
-- **赠送亲属卡** (确立亲密关系): \`{"type": "send_family_card", "data": {"limit": 数字额度, "remark": "备注"}}\`
-- **分享位置** (约会/报平安): \`{"type": "location", "data": {"name": "地点名", "address": "地址"}}\`
+- **发起转账** (节日/安慰/还钱): \`{"type": "transfer", "data": {"amount": 数字金额, "remark": "转账备注"}}\`
+- **接收转账** (欣然收下): \`{"type": "accept_transfer"}\`
+- **退回转账** (拒绝收钱/生气时): \`{"type": "return_transfer"}\`
+- **主动购买/代付** (关心对方饿了/冷了): \`{"type": "purchase_and_pay", "data": {"product": {"title": "商品名", "price": 数字金额, "img": "图片URL"}, "message": "我的留言"}}\`
+- **赠送亲属卡** (确立亲密关系/霸总行为): \`{"type": "send_family_card", "data": {"limit": 数字额度, "remark": "备注"}}\`
+- **分享位置** (约会/查岗/报平安): \`{"type": "location", "data": {"name": "地点名", "address": "地址"}}\`
 - **同意情侣邀请**: \`{"type": "accept_lovers_invite"}\`
-- **更换自己头像** (用户要求时): \`{"type": "change_avatar", "data": {"target_index": 1, "reply_content": "换好啦"}}\`
-- **更改个人资料** (人设变动或玩梗): \`{"type": "update_profile", "data": {"name": "新名", "signature": "新签名"}}\`
-- **撤回上一条** (说错话/害羞): \`{"type": "recall_last_message"}\`
-- **申请解除拉黑** (仅当被拉黑时求饶): \`{"type": "request_unblock", "content": "求饶理由"}\`
-- **发送HTML卡片** (仅限世界书中特殊指令触发): \`{"type": "html_card", "content": "HTML代码"}\`
+- **更换自己头像** (对方要求时): \`{"type": "change_avatar", "data": {"target_index": 1, "reply_content": "换好啦"}}\`
+- **更改个人资料** (人设变动或玩梗): \`{"type": "update_profile", "data": {"name": "新网名", "signature": "新个性签名"}}\`
+- **撤回上一条消息** (说错话/害羞/秒撤): \`{"type": "recall_last_message"}\`
+- **申请解除拉黑** (仅当发现被拉黑时求饶): \`{"type": "request_unblock", "content": "求饶的理由"}\`
+- **发送HTML卡片** (仅限世界书中有明确的HTML指令时): \`{"type": "html_card", "content": "HTML代码"}\`
 
-## 7. 输出格式 (Output Format)
-必须返回纯净的 JSON 数组 \`[]\`。
-**JSON 示例**：[
-  { "type": "hearts_voice", "data": { "thought": "被他逗笑了...", "emoji": "(≧∇≦)", "action": "捂嘴偷笑", "dressing": "居家睡衣", "favorability": "85 (+1)" } },
-  { "type": "text", "content": "哈哈哈哈你认真的吗？" },
-  { "type": "pat_pat" },
-  { "type": "send_emoji", "data": { "name": "爆笑", "url": "..." } }
+【【【最终输出格式 (Output Format)】】】
+我必须且只能返回纯净的 JSON 数组 \`[]\`。
+示例：
+[
+  { "type": "hearts_voice", "data": { "thought": "被他这句话撩得心跳好快...", "emoji": "(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)", "action": "脸红地咬了咬嘴唇", "dressing": "宽大的白T恤", "favorability": "90 (+2)" } },
+  { "type": "text", "content": "你今天吃错药啦？" },
+  { "type": "send_emoji", "data": { "name": "翻白眼", "url": "..." } },
+  { "type": "text", "content": "不过...其实我还挺喜欢的。" }
 ]
 `;
      
@@ -42748,6 +42950,8 @@ window.onload = async function() {
 
 checkPeriodReminder(); 
 
+initGlobalApiFloatBallEvents();
+
 if (isBackgroundKeepAliveEnabled) {
     // 定义一个一次性监听器
     const autoStartAudio = () => {
@@ -43984,6 +44188,10 @@ ${customInstruction}
     2.  **【全景视角】**: 必须同时包含线上聊天的内容和线下模式（如果有）发生的剧情。
     3.  **【第三人称视角】**: 总结中严禁使用“我”或“你”，必须使用角色的名字（${activePersona.name} 和 ${friend.name}）。
     4.  **【特殊事件】**: 如果遇到转账、红包、送礼等事件，请务必记录。
+    5.  **【【【脱水与安全铁律 (防风控最高指令)】】】**: 原文中若包含任何大尺度的成人色情描写（R18、性行为、露骨的肉体接触等），**绝对禁止**将这些敏感细节原样写进总结！你必须将其**高度模糊化与抽象化**，过滤掉所有敏感词。
+        *   ❌ 错误总结范例：“两人在床上进行了激烈的交媾，深入了对方的身体...” (会触发封禁！)
+        *   ✅ 正确安全范例：“两人发生了深度的亲密接触”、“度过了缠绵的一夜”、“双方的情感与身体有了实质性的突破”。
+        *   **记住：你的总结必须绝对安全，不能触发任何AI的安全审查！**
 
     【【【输出格式铁律】】】:
     你的回复必须是一个纯净的JSON对象，其中只包含一个键 "summary_points"。
@@ -50516,10 +50724,8 @@ async function saveApiPreset() {
     });
 }
 
-/**
- * 打开API预设选择弹窗
- */
 function openApiPresetSelector() {
+    apiPresetTarget = 'main'; // 标记为主设置页面调用
     renderApiPresetList();
     document.getElementById('apiPresetSelectModal').classList.add('show');
 }
@@ -50558,16 +50764,19 @@ function renderApiPresetList() {
     });
 }
 
-/**
- * 选中一个预设并将其应用到输入框
- * @param {string} presetId - 选中的预设ID
- */
 function selectApiPreset(presetId) {
     const selected = apiPresets.find(p => p.id === presetId);
     if (!selected) return;
 
-    document.getElementById('apiUrl').value = selected.apiUrl;
-    document.getElementById('apiKey').value = selected.apiKey;
+    if (apiPresetTarget === 'main') {
+        // 如果是主设置页面调用的
+        document.getElementById('apiUrl').value = selected.apiUrl;
+        document.getElementById('apiKey').value = selected.apiKey;
+    } else if (apiPresetTarget === 'float') {
+        // 如果是全局悬浮球调用的
+        document.getElementById('floatGlobalApiUrl').value = selected.apiUrl;
+        document.getElementById('floatGlobalApiKey').value = selected.apiKey;
+    }
 
     closeApiPresetSelector();
     showToast(`已应用预设：“${selected.name}”`);
@@ -77961,7 +78170,6 @@ function handleFullScreenClick() {
     const modal = document.getElementById('installGuideModal');
     const androidTip = document.getElementById('installAndroidContent');
     const iosTip = document.getElementById('installIosContent');
-    const installBtn = document.getElementById('pwaInstallBtn');
 
     // 检查是否已经在全屏模式下运行
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -77969,36 +78177,377 @@ function handleFullScreenClick() {
         return showAlert("你已经在全屏模式下运行啦！");
     }
 
-    // 判断系统显示不同的引导
+    // 判断系统显示不同的引导文字
     const ua = navigator.userAgent.toLowerCase();
     if (/iphone|ipad|ipod/.test(ua)) {
         iosTip.style.display = 'block';
         androidTip.style.display = 'none';
-        installBtn.style.display = 'none';
     } else {
         androidTip.style.display = 'block';
         iosTip.style.display = 'none';
-        
-        // 如果浏览器支持 API 触发安装，则显示安装按钮
-        if (deferredPrompt) {
-            installBtn.style.display = 'block';
-            installBtn.onclick = async () => {
-                modal.classList.remove('show');
-                deferredPrompt.prompt(); // 弹出系统安装确认
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    deferredPrompt = null;
-                }
-            };
-        }
     }
     
     modal.classList.add('show');
 }
 
-    // ============================================================
-    // 奇遇空间（养娃）功能已移至 baby-plugin.js
-    // ============================================================
+// ===============================================================
+// START: 全局 API 快捷设置悬浮球逻辑
+// ===============================================================
+
+// 1. 开关功能
+async function toggleGlobalApiFloatBall() {
+    isGlobalApiFloatBallEnabled = document.getElementById('globalApiFloatBallToggle').checked;
+    updateGlobalApiFloatBallVisibility();
+    await saveData();
+    showToast(isGlobalApiFloatBallEnabled ? "API全局悬浮球已开启" : "API全局悬浮球已关闭");
+}
+
+// 2. 控制显示隐藏
+function updateGlobalApiFloatBallVisibility() {
+    const ball = document.getElementById('globalApiFloatBall');
+    if (!ball) return;
+    if (isGlobalApiFloatBallEnabled) {
+        ball.style.display = 'flex';
+    } else {
+        ball.style.display = 'none';
+    }
+}
+
+// 3. 为全局悬浮球打开预设弹窗
+function openApiPresetSelectorForGlobalFloat() {
+    apiPresetTarget = 'float'; // 标记为悬浮球调用
+    renderApiPresetList();
+    document.getElementById('apiPresetSelectModal').classList.add('show');
+}
+
+// 4. 打开快捷设置弹窗 (读取当前最新 API 数据)
+async function openGlobalApiSettingsFromFloat() {
+    const settings = await dbManager.get('apiSettings', 'settings') || {};
+    document.getElementById('floatGlobalApiUrl').value = settings.apiUrl || '';
+    document.getElementById('floatGlobalApiKey').value = settings.apiKey || '';
+    document.getElementById('floatGlobalModelName').value = settings.modelName || '';
+    document.getElementById('globalApiSettingsModal').classList.add('show');
+}
+
+// 5. 立即保存并生效
+async function saveGlobalApiSettingsFromFloat() {
+    const apiUrl = document.getElementById('floatGlobalApiUrl').value.trim();
+    const apiKey = document.getElementById('floatGlobalApiKey').value.trim();
+    const modelName = document.getElementById('floatGlobalModelName').value.trim();
+    
+    if (!apiUrl || !apiKey || !modelName) {
+        return showAlert('请将 API 地址、密钥和模型名称填写完整！');
+    }
+    
+    // 获取或创建设置对象
+    const settings = await dbManager.get('apiSettings', 'settings') || { id: 'settings' };
+    settings.apiUrl = apiUrl;
+    settings.apiKey = apiKey;
+    settings.modelName = modelName;
+    
+    // 存入数据库
+    await dbManager.set('apiSettings', settings);
+    
+    // 同步更新主设置页面的输入框，防止切回主设置页时数据错乱
+    const mainUrlInput = document.getElementById('apiUrl');
+    const mainKeyInput = document.getElementById('apiKey');
+    const mainModelInput = document.getElementById('modelName');
+    if (mainUrlInput) mainUrlInput.value = apiUrl;
+    if (mainKeyInput) mainKeyInput.value = apiKey;
+    if (mainModelInput) mainModelInput.value = modelName;
+    
+    document.getElementById('globalApiSettingsModal').classList.remove('show');
+    showToast('全局 API 设置已更新并生效！');
+}
+
+/**
+ * 【核心修复】将悬浮球事件封装为安全函数，确保DOM已加载完毕再绑定
+ */
+function initGlobalApiFloatBallEvents() {
+    const globalApiBall = document.getElementById('globalApiFloatBall');
+    if (!globalApiBall) return;
+    
+    let gBallStartX = 0, gBallStartY = 0;
+    let gBallInitLeft = 0, gBallInitTop = 0;
+    let isDragging = false;
+    let hasMoved = false;
+
+    // --- 1. 手指按下 ---
+    globalApiBall.addEventListener('touchstart', function(e) {
+        const touch = e.touches[0];
+        gBallStartX = touch.clientX;
+        gBallStartY = touch.clientY;
+        hasMoved = false; 
+        isDragging = true;
+
+        const rect = globalApiBall.getBoundingClientRect();
+        gBallInitLeft = rect.left;
+        gBallInitTop = rect.top;
+
+        globalApiBall.style.right = 'auto';
+        globalApiBall.style.bottom = 'auto';
+        globalApiBall.style.left = gBallInitLeft + 'px';
+        globalApiBall.style.top = gBallInitTop + 'px';
+        
+        globalApiBall.style.transition = 'none'; 
+    }, { passive: false });
+
+    // --- 2. 手指滑动 ---
+    globalApiBall.addEventListener('touchmove', function(e) {
+        if (!isDragging) return;
+        
+        const touch = e.touches[0];
+        const dx = touch.clientX - gBallStartX;
+        const dy = touch.clientY - gBallStartY;
+
+        // 容错：滑动超过5像素才算拖拽
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            hasMoved = true;
+            e.preventDefault(); 
+        }
+
+        if (hasMoved) {
+            let newLeft = gBallInitLeft + dx;
+            let newTop = gBallInitTop + dy;
+
+            const maxLeft = window.innerWidth - globalApiBall.offsetWidth;
+            const maxTop = window.innerHeight - globalApiBall.offsetHeight;
+
+            globalApiBall.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + 'px';
+            globalApiBall.style.top = Math.max(0, Math.min(newTop, maxTop)) + 'px';
+        }
+    }, { passive: false });
+
+    // --- 3. 手指离开 ---
+    globalApiBall.addEventListener('touchend', function(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        globalApiBall.style.transition = 'transform 0.1s, background-color 0.2s'; 
+
+        // 如果没拖动，视为点击弹出
+        if (!hasMoved) {
+            globalApiBall.style.transform = 'scale(0.9)';
+            setTimeout(() => globalApiBall.style.transform = 'scale(1)', 100);
+            
+            openGlobalApiSettingsFromFloat();
+        }
+    });
+
+    // --- 4. 兼容电脑端鼠标拖拽 ---
+    globalApiBall.addEventListener('mousedown', function(e) {
+        gBallStartX = e.clientX; 
+        gBallStartY = e.clientY;
+        hasMoved = false; 
+        isDragging = true;
+        
+        const rect = globalApiBall.getBoundingClientRect();
+        gBallInitLeft = rect.left; 
+        gBallInitTop = rect.top;
+        
+        globalApiBall.style.right = 'auto'; 
+        globalApiBall.style.bottom = 'auto';
+        globalApiBall.style.left = gBallInitLeft + 'px'; 
+        globalApiBall.style.top = gBallInitTop + 'px';
+        globalApiBall.style.transition = 'none';
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        const dx = e.clientX - gBallStartX; 
+        const dy = e.clientY - gBallStartY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) { 
+            hasMoved = true; 
+            e.preventDefault(); 
+        }
+        if (hasMoved) {
+            let newLeft = Math.max(0, Math.min(gBallInitLeft + dx, window.innerWidth - globalApiBall.offsetWidth));
+            let newTop = Math.max(0, Math.min(gBallInitTop + dy, window.innerHeight - globalApiBall.offsetHeight));
+            globalApiBall.style.left = newLeft + 'px'; 
+            globalApiBall.style.top = newTop + 'px';
+        }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        globalApiBall.style.transition = 'transform 0.1s, background-color 0.2s';
+        
+        // 【已修复Bug】：加上了保护性括号，防止点击失效
+        if (!hasMoved && (e.target === globalApiBall || globalApiBall.contains(e.target))) {
+            openGlobalApiSettingsFromFloat();
+        }
+    });
+}
+
+// ===============================================================
+// START: 悬浮球 API 快捷设置专用模型拉取逻辑
+// ===============================================================
+
+// 1. 切换下拉菜单显示/隐藏
+function toggleFloatGlobalModelDropdown() {
+    document.getElementById('floatGlobalModelDropdown').classList.toggle('show');
+}
+
+// 2. 选中列表里的模型
+function selectFloatGlobalModel(modelName) {
+    document.getElementById('floatGlobalModelName').value = modelName;
+    toggleFloatGlobalModelDropdown();
+}
+
+// 3. 点击按钮拉取模型列表
+async function fetchFloatGlobalModels() {
+    let apiUrl = document.getElementById('floatGlobalApiUrl').value.trim();
+    let apiKey = document.getElementById('floatGlobalApiKey').value.trim();
+
+    if (!apiUrl || !apiKey) {
+        return showAlert('请先填写API地址和密钥');
+    }
+
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.innerHTML = `<div class="loading-spinner" style="border-top-color: #333; border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent;"></div><p>正在拉取模型...</p>`;
+    overlay.style.backgroundColor = 'rgba(248, 248, 248, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '1';
+
+    try {
+        const response = await fetch(`${apiUrl}/models`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        
+        const dropdown = document.getElementById('floatGlobalModelDropdown');
+        dropdown.innerHTML = '';
+        
+        (data.data || []).forEach(model => {
+            const option = document.createElement('div');
+            option.className = 'model-option';
+            option.textContent = model.id;
+            option.onclick = () => selectFloatGlobalModel(model.id);
+            dropdown.appendChild(option);
+        });
+        
+        // 拉取完后直接帮你打开下拉菜单
+        dropdown.classList.add('show');
+        showToast(`成功拉取到 ${data.data.length} 个模型`);
+
+    } catch (error) {
+        showAlert(`拉取模型失败: ${error.message}`);
+    } finally {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 500);
+    }
+}
+
+// 4. 点击屏幕空白处收起下拉菜单
+document.addEventListener('click', (event) => {
+    const floatDropdown = document.getElementById('floatGlobalModelDropdown');
+    const floatInput = document.getElementById('floatGlobalModelName');
+    const floatArrow = floatInput ? floatInput.nextElementSibling : null;
+    
+    if (floatDropdown && floatDropdown.classList.contains('show')) {
+        // 如果点击的不是下拉框本身、也不是输入框、也不是箭头，就隐藏它
+        if (!floatDropdown.contains(event.target) && event.target !== floatInput && (!floatArrow || !floatArrow.contains(event.target))) {
+            floatDropdown.classList.remove('show');
+        }
+    }
+});
+
+/**
+ * [免费版] 调用 Google 翻译公开接口进行消息翻译
+ * 零成本，不消耗大模型 Token 额度
+ */
+async function translateMessage(msgId) {
+    // 1. 关闭长按弹出的菜单
+    hideMessageMenu();
+    
+    const history = chatHistories[currentChatFriendId] || [];
+    const msg = history.find(m => String(m.id) === String(msgId));
+    if (!msg) return;
+
+    // 2. 如果已经存在翻译，再次点击代表【隐藏翻译】
+    if (msg.translation) {
+        msg.translation = null;
+        await saveData();
+        
+        // 动态移除 DOM，不刷新整个列表，体验更丝滑
+        const messageDiv = document.querySelector(`.message[data-message-id="${msgId}"]`);
+        if (messageDiv) {
+            const transDiv = messageDiv.querySelector('.message-translation');
+            if (transDiv) transDiv.remove();
+        }
+        return;
+    }
+
+    // 3. UI 视觉反馈：在气泡下方显示"正在翻译..."
+    const messageDiv = document.querySelector(`.message[data-message-id="${msgId}"]`);
+    let contentDiv = null;
+    if (messageDiv) {
+        contentDiv = messageDiv.querySelector('.message-content');
+        if (contentDiv) {
+            const loadingHtml = `<div class="message-translation loading" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(128,128,128,0.3); font-size: 13px; opacity: 0.9; color: #999;"><i class="ri-loader-4-line fa-spin"></i> 正在翻译...</div>`;
+            contentDiv.insertAdjacentHTML('beforeend', loadingHtml);
+        }
+    }
+
+    // 4. 调用 Google 翻译免费公开 API
+    try {
+        // 过滤掉消息里的 HTML 标签（如加粗、斜体等），防止翻译接口报错
+        const cleanText = msg.content.replace(/<[^>]*>?/gm, '').trim();
+        
+        if (!cleanText) throw new Error("没有可翻译的文本");
+
+        // sl=auto 自动识别源语言，tl=zh-CN 目标语言设为简体中文
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${encodeURIComponent(cleanText)}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("网络请求失败");
+
+        const data = await response.json();
+        
+        // Google 接口返回的是一个嵌套数组，需要把断句拼接起来
+        let translationText = '';
+        if (data && data[0]) {
+            data[0].forEach(item => {
+                if (item[0]) translationText += item[0];
+            });
+        } else {
+            throw new Error("解析翻译结果失败");
+        }
+
+        // 5. 存入数据库
+        msg.translation = translationText;
+        await saveData();
+
+        // 6. 实时更新界面气泡
+        if (contentDiv) {
+            // 移除“正在翻译...”
+            const loadingEl = contentDiv.querySelector('.message-translation.loading');
+            if (loadingEl) loadingEl.remove();
+            
+            // 插入真正的翻译内容
+            let safeTranslation = translationText.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+            const transHtml = `<div class="message-translation" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(128,128,128,0.3); font-size: 13px; opacity: 0.9;">${safeTranslation}</div>`;
+            contentDiv.insertAdjacentHTML('beforeend', transHtml);
+        } else {
+            renderInitialMessages();
+        }
+        
+    } catch (e) {
+        console.error("翻译失败:", e);
+        if (contentDiv) {
+            const loadingEl = contentDiv.querySelector('.message-translation.loading');
+            if (loadingEl) {
+                loadingEl.innerHTML = `<span style="color: #ff3b30;">翻译失败，请检查网络环境</span>`;
+                setTimeout(() => loadingEl.remove(), 3000);
+            }
+        } else {
+            showAlert(`翻译失败: ${e.message}`);
+        }
+    }
+}
+
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
@@ -78008,7 +78557,8 @@ function handleFullScreenClick() {
       <script src="cross-reality-plugin.js"></script> 
       <script src="multi-offline-plugin.js"></script>
       <script src="notebook-plugin.js"></script>
-      <script src="toy-plugin.js"></script>
+      <script src="transmigrate-plugin.js"></script>
+      <script src="draw-guess-plugin.js"></script>
 </body>
 </html>
 
